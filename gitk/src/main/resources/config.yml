@@ -1,0 +1,8 @@
+repository: "git-cherry-picker"
+organization: "org"
+gitUserName: "user"
+gitUserEmail: "user@org.com"
+gitUserPass: "pass"
+gitUserToken: "1234token"
+gmailUser: "gmailuser"
+gmailPass: "gmailpass"

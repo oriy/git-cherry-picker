@@ -4,3 +4,6 @@
 build/
 out/
 .gradle/
+
+#skip repository
+cherry-playground/
