@@ -1,0 +1,33 @@
+project.ext.applicationName = 'git-cherry-picker'
+project.ext.mainClassName = 'com.kenshoo.git.AutoCherryPicksPR'
+
+apply plugin: 'fatjar'
+
+fatJar {
+    classifier 'fat'
+    exclude "META-INF/*.SF"
+    exclude "META-INF/*.DSA"
+    exclude "META-INF/*.RSA"
+    manifest { attributes 'Main-Class': "${project.mainClassName}" }
+}
+
+jar {
+    manifest { attributes 'Main-Class': "${project.mainClassName}" }
+}
+
+group = 'com.kenshoo'
+
+artifacts {
+    archives jar, fatJar
+}
+
+dependencies {
+    compile project(':gitk')
+    compile libraries.mail
+    compile libraries.commonsCli
+    compile libraries.github
+
+    testCompile project(':gitk').sourceSets.test.output
+}
+
+build.dependsOn fatJar

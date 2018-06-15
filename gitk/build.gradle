@@ -1,0 +1,27 @@
+
+apply plugin: 'fatjar'
+
+fatJar {
+    classifier 'fat'
+    manifest.attributes("Main-Class": 'com.kenshoo.git.GitGreenMergerMain')
+}
+
+jar {
+    manifest.attributes("Main-Class": 'com.kenshoo.git.GitGreenMergerMain')
+}
+
+artifacts {
+    archives jar, fatJar
+}
+
+group = 'com.kenshoo'
+
+dependencies {
+    compile libraries.github
+    compile libraries.commonsCli
+    compile libraries.jacksonDataformatYaml
+    compile libraries.jacksonDatabind
+    testCompile libraries.mockito
+}
+
+build.dependsOn fatJar
