@@ -1,5 +1,5 @@
-project.ext.applicationName = 'git-cherry-picker'
-project.ext.mainClassName = 'com.kenshoo.git.AutoCherryPicksPR'
+project.ext.applicationName = 'cherry-picker'
+project.ext.mainClassName = 'com.jacky.git.AutoCherryPicksPR'
 
 apply plugin: 'fatjar'
 
@@ -15,7 +15,7 @@ jar {
     manifest { attributes 'Main-Class': "${project.mainClassName}" }
 }
 
-group = 'com.kenshoo'
+group = 'com.jacky'
 
 artifacts {
     archives jar, fatJar

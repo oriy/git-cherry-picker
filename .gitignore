@@ -3,7 +3,8 @@
 *.iws
 build/
 out/
-.gradle/
+.gradle**
+.idea/
 
 #skip repository
 cherry-playground/

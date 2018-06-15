@@ -26,7 +26,8 @@ class GitHubUtil {
 
     public static String THIS_REPOSITORY = 'git-cherry-picker'
 
-    public static String OWNER = "oriy"
+    public static String REPOSITORIES_DIR = 'repos'
+    public static String OWNER = configuration.organization
     public static String TEST_REPOSITORY = "cherry-playground"
     public static String TEST_REPOSITORY_URL = UrlUtils.createRemoteHttpsUrl(createRepositoryId(OWNER, TEST_REPOSITORY), "")
 
@@ -40,7 +41,7 @@ class GitHubUtil {
         "https://github.com/${repositoryId.generateId()}${SEGMENT_ISSUES}/${prNumber}"
     }
 
-    public static IRepositoryIdProvider createRepositoryId(String owner = configuration.organization, String repoName) {
+    public static IRepositoryIdProvider createRepositoryId(String owner = OWNER, String repoName) {
         RepositoryId.create(owner, repoName)
     }
 
@@ -52,7 +53,7 @@ class GitHubUtil {
         new GitHubClient().setCredentials(userName, password)
     }
 
-    public static String getRepoUrl(String owner = configuration.organization, String repoName) {
+    public static String getRepoUrl(String owner = OWNER, String repoName) {
         getRepoUrl(createRepositoryId(owner, repoName))
     }
 
