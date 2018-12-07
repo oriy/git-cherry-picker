@@ -8,6 +8,7 @@ import org.eclipse.egit.github.core.client.GitHubClient
 import org.eclipse.egit.github.core.service.CommitService
 import org.eclipse.egit.github.core.util.UrlUtils
 
+import static com.jacky.git.ConfigurationUtil.decryptPass
 import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_ISSUES
 
 /**
@@ -17,12 +18,7 @@ import static org.eclipse.egit.github.core.client.IGitHubConstants.SEGMENT_ISSUE
  */
 class GitHubUtil {
 
-    private static Configuration configuration
-
-    static {
-        File file = new File(this.getClass().getResource("/config.yml").getFile());
-        configuration = Configuration.parseYaml(file)
-    }
+    private static final Configuration configuration = ConfigurationUtil.configuration
 
     public static String THIS_REPOSITORY = 'git-cherry-picker'
 
@@ -45,8 +41,12 @@ class GitHubUtil {
         RepositoryId.create(owner, repoName)
     }
 
+    private static String decryptGitUserPass() {
+        decryptPass(configuration.gitUserPass)
+    }
+
     public static GitHubClient createGitHubClient() {
-        createGitHubClient(configuration.gitUserName, configuration.gitUserPass)
+        createGitHubClient(configuration.gitUserName, decryptGitUserPass())
     }
 
     public static GitHubClient createGitHubClient(String userName, String password) {
@@ -58,7 +58,8 @@ class GitHubUtil {
     }
 
     public static String getRepoUrl(IRepositoryIdProvider repositoryId) {
-        UrlUtils.createRemoteHttpsUrl(repositoryId, String.format("%s:%s", configuration.gitUserName, configuration.gitUserPass))
+        String userPass = String.format("%s:%s", configuration.gitUserName, decryptGitUserPass())
+        UrlUtils.createRemoteHttpsUrl(repositoryId, userPass)
     }
 
     public static String getProjectNameFromUrl(String url) {

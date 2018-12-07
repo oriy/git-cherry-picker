@@ -1,5 +1,7 @@
 package com.jacky
 
+import com.jacky.git.ConfigurationUtil
+
 import javax.mail.Address
 import javax.mail.Session
 
@@ -10,21 +12,24 @@ import javax.mail.Session
  * Time: 3:17 PM
  */
 import javax.mail.internet.InternetAddress
-import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMessage
+
+import static com.jacky.git.ConfigurationUtil.configuration
+import static com.jacky.git.ConfigurationUtil.decryptPass;
 
 
 class GmailSender {
-    String host;
-    String user;
-    int port;
-    String passwd;
-    String status = '';
+    String host
+    String email
+    int port
+    String password
+    String status = ''
 
     public GmailSender() {
         this.host = 'smtp.googlemail.com'
         this.port = 465
-        this.user = 'architects@jacky.com'
-        this.passwd = 'Fe893cb58f'
+        this.email = configuration.gmailUser
+        this.password = decryptPass(configuration.gmailPass)
     }
 
     def public simpleMail(to, subject, body) {
@@ -32,7 +37,7 @@ class GmailSender {
             def props = new Properties();
 
             props.put("mail.smtp.host", host)
-            props.put("mail.smtp.user", user)
+            props.put("mail.smtp.user", email)
             props.put("mail.smtp.port", port)
             props.put("mail.smtp.starttls.enable", "true")
             props.put("mail.smtp.auth", "true")
@@ -41,14 +46,13 @@ class GmailSender {
             def msg = new MimeMessage(session)
             msg.setContent(body.toString(), "text/html")
             msg.setSubject(subject)
-            msg.setFrom(new InternetAddress(user))
+            msg.setFrom(new InternetAddress(email))
             msg.addRecipients(MimeMessage.RecipientType.TO, (Address[]) to)
 
             def transport = session.getTransport("smtps")
 
             status = "Connecting to Gmail"
-            transport.connect(host, port, user, passwd)
-
+            transport.connect(host, port, email, password)
 
             transport.sendMessage(msg, msg.getAllRecipients())
             status = 'Message was sent'

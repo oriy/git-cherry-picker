@@ -8,20 +8,19 @@ import static org.junit.Assert.assertEquals
  * User: oriy
  * Date: 02/02/2017
  */
-class ParseYamlTest {
+class ConfigurationUtilTest {
 
     @Test
     public void testParse() throws Exception {
-        File file = new File(this.getClass().getResource("/config.yml").getFile());
-        Configuration configuration = Configuration.parseYaml(file)
+        File file = new File(this.getClass().getResource("/test_config.yml").getFile());
+        Configuration configuration = ConfigurationUtil.parseYaml(file.newInputStream())
 
         assertEquals(GitHubUtil.THIS_REPOSITORY, configuration.getRepository())
         assertEquals('org', configuration.getOrganization())
         assertEquals('user', configuration.getGitUserName())
         assertEquals('user@org.com', configuration.getGitUserEmail())
-        assertEquals('pass', configuration.getGitUserPass())
-        assertEquals('1234token', configuration.getGitUserToken())
+        assertEquals('cITmQYaAWR8', configuration.getGitUserPass())
         assertEquals('gmailuser', configuration.getGmailUser())
-        assertEquals('gmailpass', configuration.getGmailPass())
+        assertEquals('LCevAcQ_jOIICs7XUhsm-A', configuration.getGmailPass())
     }
 }
