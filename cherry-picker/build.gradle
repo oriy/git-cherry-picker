@@ -23,9 +23,9 @@ artifacts {
 
 dependencies {
     compile project(':gitk')
-    compile libraries.mail
-    compile libraries.commonsCli
-    compile libraries.github
+    compile "javax.mail:mail:1.4.5"
+    compile "commons-cli:commons-cli:1.2"
+    compile "org.eclipse.mylyn.github:org.eclipse.egit.github.core:2.1.5"
 
     testCompile project(':gitk').sourceSets.test.output
 }

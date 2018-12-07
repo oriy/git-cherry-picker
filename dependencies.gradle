@@ -1,19 +1,17 @@
-project.ext.set("libraries", "")
-project.libraries = [
-        groovy: 'org.codehaus.groovy:groovy-all:2.3.4',
-        commonsCli: 'commons-cli:commons-cli:1.2',
-        github: 'org.eclipse.mylyn.github:org.eclipse.egit.github.core:2.1.5',
-        mysql: 'mysql:mysql-connector-java:5.1.40',
-        slf4j: 'org.slf4j:slf4j-api:1.7.2',
-        logbackClassic: 'ch.qos.logback:logback-classic:1.0.9',
-        logbackCore: 'ch.qos.logback:logback-core:1.0.9',
-        jacksonDataformatYaml: 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.8.6',
-        jacksonDatabind: 'com.fasterxml.jackson.core:jackson-databind:2.8.6',
-        junit: 'junit:junit-dep:4.10',
-        mockito: 'org.mockito:mockito-core:2.7.7',
-        hamcrest: 'org.hamcrest:hamcrest-all:1.3',
-        mail: 'javax.mail:mail:1.4.5',
-        commonsEmail: 'org.apache.commons:commons-email:1.3.3',
-        jenkinsPlugins: 'org.jenkins-ci.plugins:plugin:1.509.4',
-        jenkinsCore: 'org.jenkins-ci.main:jenkins-core:1.509.4',
-]
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:2.3.4'
+    compile 'commons-cli:commons-cli:1.2'
+    compile 'org.eclipse.mylyn.github:org.eclipse.egit.github.core:2.1.5'
+    compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.8.6'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.6'
+    compile 'javax.mail:mail:1.4.5'
+    
+    testCompile 'junit:junit-dep:4.10'
+    testCompile 'org.mockito:mockito-core:2.7.7'
+    testCompile 'org.hamcrest:hamcrest-all:1.3'
+}
+

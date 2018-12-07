@@ -1,10 +1,7 @@
 def BUILD_NUMBER = project.hasProperty('BUILD_NUMBER')? "$BUILD_NUMBER" : '0'
 version = "1.0.$BUILD_NUMBER"
 
-apply plugin: 'idea'
-
 allprojects {
-    apply plugin: 'idea'
     apply plugin: 'java'
     apply plugin: 'groovy'
     apply plugin: 'maven'
@@ -16,19 +13,16 @@ allprojects {
     apply from:"${rootProject.projectDir}/dependencies.gradle"
 
     dependencies {
-        compile libraries.groovy
+        compile "org.codehaus.groovy:groovy-all:2.3.4"
 
-        testCompile libraries.junit
-        testCompile libraries.hamcrest
+        testCompile "junit:junit-dep:4.10"
+        testCompile "org.hamcrest:hamcrest-all:1.3"
     }
 }
 
 buildscript {
     repositories {
-        mavenCentral()
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
+        jcenter()
     }
     dependencies {
         classpath 'eu.appsatori:gradle-fatjar-plugin:0.2'
@@ -36,7 +30,7 @@ buildscript {
 }
 
 repositories {
-    mavenCentral()
+    jcenter()
 }
 
 sourceCompatibility = 1.8
@@ -46,19 +40,6 @@ sourceSets.main.java.srcDirs = []
 sourceSets.main.groovy.srcDirs += ["src/main/java"]
 
 task wrapper(type: Wrapper) {
-  gradleVersion = '2.12'
-}
-
-idea {
-    project {
-        jdkName = '1.8'
-        languageLevel = '1.8'
-    }
-}
-
-idea.project.ipr {
-    withXml { provider ->
-        provider.node.component.find { it.@name == 'VcsDirectoryMappings' }.mapping.@vcs = 'Git'
-    }
+  gradleVersion = '3.3'
 }
 

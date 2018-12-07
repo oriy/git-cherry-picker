@@ -17,11 +17,13 @@ artifacts {
 group = 'com.jacky'
 
 dependencies {
-    compile libraries.github
-    compile libraries.commonsCli
-    compile libraries.jacksonDataformatYaml
-    compile libraries.jacksonDatabind
-    testCompile libraries.mockito
+    compile 'org.codehaus.groovy:groovy-all:2.3.4'
+    compile "org.eclipse.mylyn.github:org.eclipse.egit.github.core:2.1.5"
+    compile "commons-cli:commons-cli:1.2"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.8.6"
+    compile "com.fasterxml.jackson.core:jackson-databind:2.8.6"
+
+    testCompile "org.mockito:mockito-core:2.7.7"
 }
 
 build.dependsOn fatJar
