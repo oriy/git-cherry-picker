@@ -78,8 +78,8 @@ class GitHubUtil {
     }
 
     public static void setRepoGitConfig(GitCommandExecutor gitExec) {
-        gitExec.gitConfigGlobal('user.name', configuration.gitUserName)
-        gitExec.gitConfigGlobal('user.email', configuration.gitUserEmail)
+        gitExec.gitConfigLocal('user.name', configuration.gitUserName)
+        gitExec.gitConfigLocal('user.email', configuration.gitUserEmail)
     }
 
     public static Map<String, String> createMapFromStringArg(String sources) {

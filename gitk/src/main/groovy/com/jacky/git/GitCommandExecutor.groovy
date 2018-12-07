@@ -162,12 +162,12 @@ class GitCommandExecutor {
         execute(gitCreateNewBranchCommand(branchName))
     }
 
-    public GitCommand gitConfigGlobalCommand(String key, String value) {
-        gitCommand("git config --global ${key} \"${value}\"")
+    public GitCommand gitConfigLocalCommand(String key, String value) {
+        gitCommand("git config --local ${key} \"${value}\"")
     }
 
-    public GitCommandResult gitConfigGlobal(String key, String value) {
-        execute(gitConfigGlobalCommand(key, value))
+    public GitCommandResult gitConfigLocal(String key, String value) {
+        execute(gitConfigLocalCommand(key, value))
     }
 
     public GitCommand gitCherryDiffCommand(String targetBranch, String sourceBranch) {

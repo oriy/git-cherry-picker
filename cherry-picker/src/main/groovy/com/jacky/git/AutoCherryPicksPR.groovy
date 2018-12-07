@@ -59,8 +59,6 @@ class AutoCherryPicksPR {
         AutoCherryPicksPR autoCherryPicksPR = new AutoCherryPicksPR(context)
         GitMergeMail gitMergeMail = autoCherryPicksPR.gitMergeMail
 
-        GitHubUtil.setRepoGitConfig(autoCherryPicksPR.getGitExec())
-
         gitMergeMail.appendBody(EMAIL_HEADER)
 
         boolean shouldSendMail = false
@@ -105,6 +103,8 @@ class AutoCherryPicksPR {
         String repoName = context.getRepoName()
         String repoOwner = context.getRepoOwner()
         IRepositoryIdProvider repositoryId = GitHubUtil.createRepositoryId(repoOwner, repoName)
+
+        GitHubUtil.setRepoGitConfig(gitExec)
 
         GitHubClient gitHubClient = GitHubUtil.createGitHubClient()
         PullRequestService pullRequestService = new PullRequestService(gitHubClient)
