@@ -22,5 +22,6 @@ class ConfigurationUtilTest {
         assertEquals('cITmQYaAWR8', configuration.getGitUserPass())
         assertEquals('gmailuser', configuration.getGmailUser())
         assertEquals('LCevAcQ_jOIICs7XUhsm-A', configuration.getGmailPass())
+        assertEquals(['zAKontFh5gw', 'oIOI9yoPqVA'], configuration.getApproverTokens())
     }
 }

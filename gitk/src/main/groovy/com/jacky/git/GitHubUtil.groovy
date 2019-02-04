@@ -53,6 +53,14 @@ class GitHubUtil {
         new GitHubClient().setCredentials(userName, password)
     }
 
+    public static List<GitHubClient> createApproverGitHubClients() {
+        List<GitHubClient> gitHubClients = [createGitHubClient()]
+        for (String encryptedAccessToken : configuration.approverTokens) {
+            gitHubClients.add(createGitHubClient('approver', decryptPass(encryptedAccessToken)))
+        }
+        gitHubClients
+    }
+
     public static String getRepoUrl(String owner = OWNER, String repoName) {
         getRepoUrl(createRepositoryId(owner, repoName))
     }

@@ -108,6 +108,7 @@ class AutoCherryPicksPR {
 
         GitHubClient gitHubClient = GitHubUtil.createGitHubClient()
         PullRequestService pullRequestService = new PullRequestService(gitHubClient)
+        PullRequestReviewsService pullRequestReviewsService = new PullRequestReviewsService(GitHubUtil.createApproverGitHubClients())
         IssueService issueService = new IssueService(gitHubClient)
         LabelService labelService = new LabelService(gitHubClient)
 
@@ -178,7 +179,7 @@ class AutoCherryPicksPR {
                 }
 
                 if (!dryRun) {
-                    issueNumber = createPR(pullRequestService, issueService, repositoryId, localTargetBranch, branchName, commit, commitDescription.getUser(), labels)
+                    issueNumber = createPR(pullRequestService, pullRequestReviewsService, issueService, repositoryId, localTargetBranch, branchName, commit, commitDescription.getUser(), labels)
                 }
 
                 gitMergeMail.appendBody(printHtml(commitDescription, CommitResult.PULL_REQUEST, getGitHubIssueUrl(repositoryId, issueNumber)))
@@ -232,8 +233,9 @@ class AutoCherryPicksPR {
         return label
     }
 
-    private static int createPR(PullRequestService pullRequestService, IssueService issueService, IRepositoryIdProvider repositoryId,
-                    String baseBranch, String headBranch, CherryPicksResult commit, User user, List<Label> labels) {
+    private static int createPR(PullRequestService pullRequestService, PullRequestReviewsService pullRequestReviewsService,
+                                IssueService issueService, IRepositoryIdProvider repositoryId,
+                                String baseBranch, String headBranch, CherryPicksResult commit, User user, List<Label> labels) {
         String commitHash = commit.commitHash
         PullRequest pr = new PullRequest()
                 .setTitle(CHERRY_PICK_TITLE + ' ' + commitHash.substring(0, 7) + ': ' + commit.commitMessage)
@@ -246,6 +248,9 @@ class AutoCherryPicksPR {
         Issue issue = issueService.getIssue(repositoryId, prNumber)
         issue.setLabels(labels).setAssignee(user)
         issueService.editIssue(repositoryId, issue)
+
+        pullRequestReviewsService.approvePullRequest(repositoryId, prNumber)
+
         prNumber
     }
 

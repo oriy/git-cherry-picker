@@ -18,4 +18,6 @@ class Configuration {
     String gmailUser
 
     String gmailPass
+
+    List<String> approverTokens
 }

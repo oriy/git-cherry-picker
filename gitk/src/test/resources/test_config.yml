@@ -6,3 +6,7 @@ gitUserEmail: "user@org.com"
 gitUserPass: "cITmQYaAWR8"
 gmailUser: "gmailuser"
 gmailPass: "LCevAcQ_jOIICs7XUhsm-A"
+
+approverTokens:
+- "zAKontFh5gw"
+- "oIOI9yoPqVA"

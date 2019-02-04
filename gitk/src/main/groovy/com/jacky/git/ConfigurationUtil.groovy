@@ -48,8 +48,19 @@ class ConfigurationUtil {
         br.print("Please enter gmail account ${configuration.gmailUser}'s password: ")
         def gmailPass = br.readLine()
 
+        br.println("Please enter approvers access tokens, press <ENTER> to complete")
+        br.print("access token: ")
+        String approverToken
+        def approverTokens = []
+        while (!(approverToken = br.readLine()).isEmpty() ) {
+            approverTokens.add(encrypt(approverToken))
+            br.print("access token: ")
+        }
+
         configuration.setGitUserPass(encrypt(gitUserPass))
         configuration.setGmailPass(encrypt(gmailPass))
+        configuration.setApproverTokens(approverTokens)
+
         writeYaml(configFile, configuration)
 
         println()
