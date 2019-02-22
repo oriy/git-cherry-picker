@@ -1,10 +1,16 @@
+plugins {
+    id 'com.github.johnrengelman.shadow'
+}
+
 project.ext.applicationName = 'cherry-picker'
 project.ext.mainClassName = 'com.jacky.git.AutoCherryPicksPR'
 
-apply plugin: 'fatjar'
+artifacts {
+    archives jar, shadowJar
+}
 
-fatJar {
-    classifier 'fat'
+shadowJar {
+    archiveFileName = "cherry-picker-$version-fat.jar"
     exclude "META-INF/*.SF"
     exclude "META-INF/*.DSA"
     exclude "META-INF/*.RSA"
@@ -15,19 +21,9 @@ jar {
     manifest { attributes 'Main-Class': "${project.mainClassName}" }
 }
 
-group = 'com.jacky'
-
-artifacts {
-    archives jar, fatJar
-}
-
 dependencies {
     compile project(':gitk')
-    compile "javax.mail:mail:1.4.5"
-    compile "commons-cli:commons-cli:1.2"
-    compile "org.eclipse.mylyn.github:org.eclipse.egit.github.core:2.1.5"
+    compile library.mail
 
     testCompile project(':gitk').sourceSets.test.output
 }
-
-build.dependsOn fatJar

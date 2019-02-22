@@ -10,6 +10,9 @@ WORKDIR $CHERRY
 
 ADD . $CHERRY/
 
-RUN ./gradlew fatJar
+#cache gradle distribution
+RUN ./gradlew --version
+
+RUN ./gradlew shadowJar
 
 CMD ["/bin/bash"]

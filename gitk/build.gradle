@@ -1,9 +1,11 @@
+plugins {
+    id 'com.github.johnrengelman.shadow'
+}
 
-apply plugin: 'fatjar'
-
-fatJar {
-    classifier 'fat'
+shadowJar {
+    archiveFileName = "gitk-$version-fat.jar"
     manifest.attributes("Main-Class": 'com.jacky.git.GitGreenMergerMain')
+    zip64 true
 }
 
 jar {
@@ -11,19 +13,12 @@ jar {
 }
 
 artifacts {
-    archives jar, fatJar
+    archives jar, shadowJar
 }
-
-group = 'com.jacky'
 
 dependencies {
-    compile 'org.codehaus.groovy:groovy-all:2.3.4'
-    compile "org.eclipse.mylyn.github:org.eclipse.egit.github.core:2.1.5"
-    compile "commons-cli:commons-cli:1.2"
-    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.8.6"
-    compile "com.fasterxml.jackson.core:jackson-databind:2.8.6"
+    compile library.jackson_yaml
+    compile library.jackson_databind
 
-    testCompile "org.mockito:mockito-core:2.7.7"
+    testCompile library.mockito
 }
-
-build.dependsOn fatJar
