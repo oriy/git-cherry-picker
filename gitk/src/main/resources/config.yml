@@ -1,12 +1,10 @@
 ---
 repository: "git-cherry-picker"
-organization: "org"
-gitUserName: "user"
-gitUserEmail: "user@org.com"
-gitUserPass: "cITmQYaAWR8"
-gmailUser: "gmailuser"
-gmailPass: "LCevAcQ_jOIICs7XUhsm-A"
-
+organization: "locusview"
+gitUserName: "nortecview"
+gitUserEmail: "nortecview@nortecview.com"
+gitUserPass: "YOBxBrVUczXqs6Scmf5aiw"
+gmailUser: "nortecview.jenkins@gmail.com"
+gmailPass: "bIfWQ7zZMsqjWNRyqwEQow"
 approverTokens:
-- "NgNJpDtS4RqGB-vAve2It5oUisbyVHthDygEnz4-JUbCYAjP0NnT2wgKztdSGyb4"
-- "3QEwW7yVk6YHuvLsBvktCTW_cnWSk626hcnsJblYCx8gLw00wQFlTggKztdSGyb4"
+- "PukMsPF7rC1hmK5vSxwnWunbaHpQPXvgEssIQvJErMt_1Ybk8-LoJwgKztdSGyb4"
