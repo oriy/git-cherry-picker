@@ -1,4 +1,4 @@
-FROM java:8
+FROM openjdk:8-jdk
 
 RUN apt-get update && apt-get install -y git
 
@@ -11,7 +11,7 @@ WORKDIR $CHERRY
 ADD . $CHERRY/
 
 #cache gradle distribution
-RUN ./gradlew --version
+RUN ./gradlew
 
 RUN ./gradlew shadowJar
 
