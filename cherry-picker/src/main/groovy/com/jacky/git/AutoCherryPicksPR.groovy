@@ -188,14 +188,18 @@ class AutoCherryPicksPR {
                 def processOutput = gitExec.gitCherryPickRecordMerge(commitHash)
                 if (processOutput.exitValue == 0) {
                     gitMergeMail.addCommitToReport(printHtml(commitDescription, CommitResult.RECORD_ONLY, ''), userEmail)
-                    shouldPushMaster = true
+                    shouldPushMaster = !dryRun
                 } else {
                     CommitResult commitResult = CommitResult.RECORD_ONLY_FAILED
-                    int issueNumber = getOrCreateIssue(gitExec, issueService, repositoryId, commitDescription, commitResult, commitDescription.getUser(), labels)
+                    int issueNumber = 1
+
+                    if (!dryRun) {
+                        issueNumber = getOrCreateIssue(gitExec, issueService, repositoryId, commitDescription, commitResult, commitDescription.getUser(), labels)
+                    }
                     gitMergeMail.addCommitToReport(printHtml(commitDescription, commitResult, getGitHubIssueUrl(repositoryId, issueNumber)), userEmail)
                     gitExec.gitResetLastCommit()
                 }
-                shouldSendMail = true
+                shouldSendMail = !dryRun
             }
             gitMergeMail.appendBody("<br/><br/>")
         }
