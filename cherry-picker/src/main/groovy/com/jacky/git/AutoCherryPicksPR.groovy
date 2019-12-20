@@ -15,6 +15,7 @@ import static com.jacky.git.GitHubUtil.getGitHubIssueUrl
 import static com.jacky.git.IssueServiceHelper.getOpenIssuesByQuery
 import static com.jacky.git.ReportPrinter.printHtml
 import static com.jacky.git.ReportPrinter.printHtmlContent
+import static org.eclipse.egit.github.core.service.IssueService.STATE_OPEN
 
 /**
  * ToTally VictOrious Hackathon 2016
@@ -168,18 +169,26 @@ class AutoCherryPicksPR {
                 }
 
                 int issueNumber = 1
+                IssueNumberState issueNumberState
 
                 if (failed) {
-                    shouldSendMail = true
-                    issueNumber = getOrCreateIssue(gitExec, issueService, repositoryId, commitDescription, commitResult, commitDescription.getUser(), labels)
-                    gitMergeMail.addCommitToReport(printHtml(commitDescription, commitResult, getGitHubIssueUrl(repositoryId, issueNumber)), userEmail)
-                    gitMergeMail.appendBody("<br/><br/>")
+                    issueNumberState = getOrCreateIssue(gitExec, issueService, repositoryId, commitDescription, commitResult, commitDescription.getUser(), labels)
+                    issueNumber = issueNumberState.issueNumber
+
                     gitExec.gitResetLastCommit()
-                    return
+
+                    if (issueNumberState.issueState.equals(STATE_OPEN)) {
+                        shouldSendMail = true
+                        gitMergeMail.addCommitToReport(printHtml(commitDescription, commitResult, getGitHubIssueUrl(repositoryId, issueNumber)), userEmail)
+                        gitMergeMail.appendBody("<br/><br/>")
+                        return
+                    }
                 }
 
                 if (!dryRun) {
-                    issueNumber = createPR(pullRequestService, pullRequestReviewsService, issueService, repositoryId, localTargetBranch, branchName, commit, commitDescription.getUser(), labels)
+                    Issue issue = createPR(pullRequestService, pullRequestReviewsService, issueService, repositoryId, localTargetBranch, branchName, commit, commitDescription.getUser(), labels)
+                    issueNumberState = IssueNumberState.fromIssue(issue)
+                    issueNumber = issueNumberState.issueNumber
                 }
 
                 gitMergeMail.appendBody(printHtml(commitDescription, CommitResult.PULL_REQUEST, getGitHubIssueUrl(repositoryId, issueNumber)))
@@ -237,9 +246,9 @@ class AutoCherryPicksPR {
         return label
     }
 
-    private static int createPR(PullRequestService pullRequestService, PullRequestReviewsService pullRequestReviewsService,
-                                IssueService issueService, IRepositoryIdProvider repositoryId,
-                                String baseBranch, String headBranch, CherryPicksResult commit, User user, List<Label> labels) {
+    private static Issue createPR(PullRequestService pullRequestService, PullRequestReviewsService pullRequestReviewsService,
+                                  IssueService issueService, IRepositoryIdProvider repositoryId,
+                                  String baseBranch, String headBranch, CherryPicksResult commit, User user, List<Label> labels) {
         String commitHash = commit.commitHash
         PullRequest pr = new PullRequest()
                 .setTitle(CHERRY_PICK_TITLE + ' ' + commitHash.substring(0, 7) + ': ' + commit.commitMessage)
@@ -255,24 +264,24 @@ class AutoCherryPicksPR {
 
         pullRequestReviewsService.approvePullRequest(repositoryId, prNumber)
 
-        prNumber
+        issue
     }
 
-    private static int getOrCreateIssue(GitCommandExecutor gitExec, IssueService issueService, IRepositoryIdProvider repositoryId,
-                                   CommitDescription commit, CommitResult commitResult, User user, List<Label> labels) {
+    private static IssueNumberState getOrCreateIssue(GitCommandExecutor gitExec, IssueService issueService, IRepositoryIdProvider repositoryId,
+                                                     CommitDescription commit, CommitResult commitResult, User user, List<Label> labels) {
         String commitHash = commit.commitHash
         String title = 'FAILED ' + CHERRY_PICK_TITLE + ' ' + commitHash.substring(0, 7)
         List<SearchIssue> issueList = getOpenIssuesByQuery(issueService, repositoryId, title)
 
         if (!issueList.isEmpty()) {
-            return issueList.get(0).getNumber()
+            return IssueNumberState.fromSearchIssue(issueList.get(0))
         }
 
-        createIssue(gitExec, issueService, repositoryId, commit, commitResult, user, labels, commitHash, title)
+        IssueNumberState.fromIssue(createIssue(gitExec, issueService, repositoryId, commit, commitResult, user, labels, commitHash, title))
     }
 
-    private static int createIssue(GitCommandExecutor gitExec, IssueService issueService, IRepositoryIdProvider repositoryId,
-                                   CommitDescription commit, CommitResult commitResult, User user, List<Label> labels, String commitHash, String title) {
+    private static Issue createIssue(GitCommandExecutor gitExec, IssueService issueService, IRepositoryIdProvider repositoryId,
+                                     CommitDescription commit, CommitResult commitResult, User user, List<Label> labels, String commitHash, String title) {
         boolean recordOnlyFailed = (commitResult == CommitResult.RECORD_ONLY_FAILED)
 
         GitCommand gitPushCommand = gitExec.gitPushCommand(getBranchName(commitHash))
@@ -299,7 +308,7 @@ class AutoCherryPicksPR {
                 .setBody(bodySb.toString())
                 .setLabels(labels).setAssignee(user)
         issue = issueService.createIssue(repositoryId, issue)
-        issue.getNumber()
+        issue
     }
 
     static List<GitCommand> getCherryPickCommandsFor(GitCommandExecutor gitExec, String commitHash, List<GitCommand> gitCommands) {

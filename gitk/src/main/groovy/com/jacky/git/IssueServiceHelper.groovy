@@ -5,6 +5,8 @@ import org.eclipse.egit.github.core.Issue
 import org.eclipse.egit.github.core.SearchIssue
 import org.eclipse.egit.github.core.service.IssueService
 
+import java.util.stream.Collectors
+
 import static org.eclipse.egit.github.core.service.IssueService.*
 
 /**
@@ -21,6 +23,6 @@ class IssueServiceHelper {
     }
 
     public static List<SearchIssue> getOpenIssuesByQuery(IssueService issueService, IRepositoryIdProvider repositoryId, String title) {
-        issueService.searchIssues(repositoryId, STATE_OPEN, "\"${title}\" is:issue is:open".toString())
+        issueService.searchIssues(repositoryId, STATE_OPEN, "\"${title}\" is:issue".toString())
     }
 }
