@@ -10,7 +10,7 @@ artifacts {
 }
 
 shadowJar {
-    archiveFileName = "cherry-picker-$archiveVersion-fat.jar"
+    archiveFileName = "cherry-picker-${archiveVersion.get()}-fat.jar"
     exclude "META-INF/*.SF"
     exclude "META-INF/*.DSA"
     exclude "META-INF/*.RSA"

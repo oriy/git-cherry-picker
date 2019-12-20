@@ -3,7 +3,7 @@ plugins {
 }
 
 shadowJar {
-    archiveFileName = "gitk-$archiveVersion-fat.jar"
+    archiveFileName = "gitk-${archiveVersion.get()}-fat.jar"
     manifest.attributes("Main-Class": 'com.jacky.git.GitGreenMergerMain')
     zip64 true
 }
