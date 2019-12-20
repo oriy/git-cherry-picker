@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-docker build -t cherry_picker:latest .
+docker build -t nortecview/cherry_picker:latest .

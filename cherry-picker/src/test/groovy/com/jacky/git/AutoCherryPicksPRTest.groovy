@@ -63,7 +63,7 @@ class AutoCherryPicksPRTest {
         boolean shouldSendEmail = autoCherryPicksPullRequest.runAutoCherryPicks(context.repositoryUrl, 'origin/test-cherry', 'origin/master', tmpDir.getAbsolutePath(), false, context.dryRun)
 
         assertTrue(shouldSendEmail || context.dryRun)
-        assertEquals('<li><font color=\'#dd0000\'> <b><a href=\'https://github.com/oriy/cherry-playground/issues/2\'>CREATED ISSUE</a>' +
+        assertEquals('<li><font color=\'#dd0000\'> <b><a href=\'https://github.com/locusview/cherry-playground/issues/1\'>CREATED ISSUE</a>' +
                 " - CONFLICT</b> merging commit: <b>$TEST_COMMIT_SHA</b><br/>" +
                 ' User: <b>oriy</b>, Author: Ori Yechieli <b>ori.yechieli@gmail.com</b>;<br/>' +
                 ' Message: <b>third commit</b>;<br/><b>Please handle manually!</b>' +
