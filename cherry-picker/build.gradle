@@ -10,7 +10,7 @@ artifacts {
 }
 
 shadowJar {
-    archiveFileName = "cherry-picker-$version-fat.jar"
+    archiveFileName = "cherry-picker-$archiveVersion-fat.jar"
     exclude "META-INF/*.SF"
     exclude "META-INF/*.DSA"
     exclude "META-INF/*.RSA"
@@ -22,8 +22,8 @@ jar {
 }
 
 dependencies {
-    compile project(':gitk')
-    compile library.mail
+    implementation project(':gitk')
+    implementation library.mail
 
-    testCompile project(':gitk').sourceSets.test.output
+    testImplementation project(':gitk').sourceSets.test.output
 }

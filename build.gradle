@@ -38,11 +38,12 @@ subprojects {
     }
 
     dependencies {
-        compile library.groovy
-        compile library.cli
-        compile library.github
+        implementation library.groovy
+        implementation library.cli
+        implementation library.github
+        implementation library.jackson_databind
 
-        testCompile library.junit
-        testCompile library.hamcrest
+        testImplementation library.junit
+        testImplementation library.hamcrest
     }
 }
