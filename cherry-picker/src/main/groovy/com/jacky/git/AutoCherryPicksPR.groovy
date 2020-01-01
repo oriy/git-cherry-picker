@@ -32,12 +32,8 @@ class AutoCherryPicksPR {
     private static final String REPORT_NAME = 'Auto Cherry Pick Report'
     private static final String LABEL_NAME = 'cherry-pick'
 
-    private static def doNotCherryPickMessages = [
-            "no-cherry-pick",
-            "no cherry pick", "no cherrypick", "no cherry-pick",
-            "don't cherry pick", "don't cherrypick", "don't cherry-pick",
-            "do not cherry pick", "do not cherrypick", "do not cherry-pick"
-    ]
+    private static Pattern doNotCherryPickMessages = Pattern.compile("(no|don't|do not|skip):?[ -]?cherry[ -]?pick")
+
     private static final String EMAIL_HEADER = '<body>'
     private static final String EMAIL_FOOTER = '</ul><br><b>Please go over this report and if your code was not merged, it is YOUR responsibility to fix it!</b><br></body>'
 
@@ -353,14 +349,8 @@ class AutoCherryPicksPR {
     }
 
     static boolean shouldCommitBeCherryPicked(CherryPicksResult commit) {
-        def result = true
         def msg = commit.commitMessage.toLowerCase()
-        doNotCherryPickMessages.each {
-            if (msg.contains(it)) {
-                result = false
-            }
-        }
-        return result;
+        return ! doNotCherryPickMessages.matcher(msg).find()
     }
 
 }
