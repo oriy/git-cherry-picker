@@ -8,6 +8,8 @@ import org.eclipse.egit.github.core.service.IssueService
 import org.eclipse.egit.github.core.service.LabelService
 import org.eclipse.egit.github.core.service.PullRequestService
 
+import java.util.regex.Pattern
+
 import static com.jacky.git.GitHubUtil.CHERRY_PICK_BODY
 import static com.jacky.git.GitHubUtil.CHERRY_PICK_TITLE
 import static com.jacky.git.GitHubUtil.REPOSITORIES_DIR
@@ -163,35 +165,42 @@ class AutoCherryPicksPR {
                 if (failed) {
                     commitResult = CommitResult.CONFLICT
                 } else {
-                    processOutput = gitExec.gitPush(branchName)
-                    failed = processOutput.failed()
-                    commitResult = failed ? CommitResult.PUSH_ERROR : CommitResult.PULL_REQUEST
+                    commitResult = CommitResult.PULL_REQUEST
+                    if (!dryRun) {
+                        processOutput = gitExec.gitPush(branchName)
+                        failed = processOutput.failed()
+                        commitResult = failed ? CommitResult.PUSH_ERROR : CommitResult.PULL_REQUEST
+                    }
                 }
 
                 int issueNumber = 1
                 IssueNumberState issueNumberState
 
                 if (failed) {
-                    issueNumberState = getOrCreateIssue(gitExec, issueService, repositoryId, commitDescription, commitResult, commitDescription.getUser(), labels)
-                    issueNumber = issueNumberState.issueNumber
+                    if (!dryRun) {
+                        issueNumberState = getOrCreateIssue(gitExec, issueService, repositoryId, commitDescription, commitResult, commitDescription.getUser(), labels)
+                        issueNumber = issueNumberState.issueNumber
+                    }
 
                     gitExec.gitResetLastCommit()
 
                     if (issueNumberState.issueState.equals(STATE_OPEN)) {
-                        shouldSendMail = true
+                        if (!dryRun) {
+                            shouldSendMail = true
+                        }
                         gitMergeMail.addCommitToReport(printHtml(commitDescription, commitResult, getGitHubIssueUrl(repositoryId, issueNumber)), userEmail)
                         gitMergeMail.appendBody("<br/><br/>")
-                        return
                     }
-                }
+                    return
 
-                if (!dryRun) {
-                    Issue issue = createPR(pullRequestService, pullRequestReviewsService, issueService, repositoryId, localTargetBranch, branchName, commit, commitDescription.getUser(), labels)
-                    issueNumberState = IssueNumberState.fromIssue(issue)
-                    issueNumber = issueNumberState.issueNumber
+                } else {
+                    if (!dryRun) {
+                        Issue issue = createPR(pullRequestService, pullRequestReviewsService, issueService, repositoryId, localTargetBranch, branchName, commit, commitDescription.getUser(), labels)
+                        issueNumberState = IssueNumberState.fromIssue(issue)
+                        issueNumber = issueNumberState.issueNumber
+                    }
+                    gitMergeMail.appendBody(printHtml(commitDescription, CommitResult.PULL_REQUEST, getGitHubIssueUrl(repositoryId, issueNumber)))
                 }
-
-                gitMergeMail.appendBody(printHtml(commitDescription, CommitResult.PULL_REQUEST, getGitHubIssueUrl(repositoryId, issueNumber)))
 
             } else {
                 def processOutput = gitExec.gitCherryPickRecordMerge(commitHash)

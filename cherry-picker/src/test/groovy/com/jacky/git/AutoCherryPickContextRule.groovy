@@ -16,6 +16,6 @@ class AutoCherryPickContextRule extends ExternalResource {
 
     @Override
     protected void before() throws Throwable {
-        context = new AutoCherryPickContext(OWNER, TEST_REPOSITORY, 'origin/from:origin/to', 'test@mail.com', true, true)
+        context = new AutoCherryPickContext(OWNER, TEST_REPOSITORY, 'origin/from:origin/to', 'test@mail.com', false, true)
     }
 }

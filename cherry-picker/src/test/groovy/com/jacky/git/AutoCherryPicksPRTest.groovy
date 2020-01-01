@@ -6,9 +6,7 @@ import org.junit.Rule
 import org.junit.Test
 
 import static com.jacky.git.AutoCherryPicksPR.shouldCommitBeCherryPicked
-import static com.jacky.git.GitHubUtil.TEST_COMMIT_BRANCH
-import static com.jacky.git.GitHubUtil.TEST_COMMIT_SHA
-import static com.jacky.git.GitHubUtil.TEST_REPOSITORY
+import static com.jacky.git.GitHubUtil.*
 import static org.junit.Assert.*
 
 class AutoCherryPicksPRTest {
@@ -64,7 +62,7 @@ class AutoCherryPicksPRTest {
     public void testAutoCherryPickPullRequestOnConflict() throws Exception {
         boolean shouldSendEmail = autoCherryPicksPullRequest.runAutoCherryPicks(context.repositoryUrl, 'origin/test-cherry', 'origin/master', tmpDir.getAbsolutePath(), false, context.dryRun)
 
-        assertTrue(shouldSendEmail)
+        assertTrue(shouldSendEmail || context.dryRun)
         assertEquals('<li><font color=\'#dd0000\'> <b><a href=\'https://github.com/oriy/cherry-playground/issues/2\'>CREATED ISSUE</a>' +
                 " - CONFLICT</b> merging commit: <b>$TEST_COMMIT_SHA</b><br/>" +
                 ' User: <b>oriy</b>, Author: Ori Yechieli <b>ori.yechieli@gmail.com</b>;<br/>' +

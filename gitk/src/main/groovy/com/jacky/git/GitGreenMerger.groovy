@@ -6,7 +6,6 @@ import org.eclipse.egit.github.core.PullRequest
 import org.eclipse.egit.github.core.PullRequestMarker
 import org.eclipse.egit.github.core.client.GitHubClient
 import org.eclipse.egit.github.core.service.IssueService
-import org.eclipse.egit.github.core.service.PullRequestService
 
 import static com.jacky.git.IssueServiceHelper.getOpenIssuesByLabel
 import static com.jacky.git.PullRequestStatusService.BUILD_SUCCESS_DESCRIPTION
@@ -23,24 +22,24 @@ class GitGreenMerger {
 
     final GitCommandExecutor gitExec
     final GitHubClient gitHubClient
-    final PullRequestService pullRequestService
+    final PullRequestMergeService pullRequestMergeService
     final PullRequestStatusService pullRequestStatusService
     final IssueService issueService
     final GitKDataService gitKDataService
     final IRepositoryIdProvider repositoryId
 
     public GitGreenMerger(GitCommandExecutor gitExec, GitHubClient gitHubClient, IRepositoryIdProvider repositoryId) {
-        this(gitExec, gitHubClient, new PullRequestService(gitHubClient),
+        this(gitExec, gitHubClient, new PullRequestMergeService(gitHubClient),
              new PullRequestStatusService(gitHubClient), new IssueService(gitHubClient),
              new GitKDataService(gitHubClient), repositoryId)
     }
 
-    GitGreenMerger(GitCommandExecutor gitExec, GitHubClient gitHubClient, PullRequestService pullRequestService,
+    GitGreenMerger(GitCommandExecutor gitExec, GitHubClient gitHubClient, PullRequestMergeService pullRequestMergeService,
                    PullRequestStatusService pullRequestStatusService, IssueService issueService,
                    GitKDataService gitKDataService, IRepositoryIdProvider repositoryId) {
         this.gitExec = gitExec
         this.gitHubClient = gitHubClient
-        this.pullRequestService = pullRequestService
+        this.pullRequestMergeService = pullRequestMergeService
         this.pullRequestStatusService = pullRequestStatusService
         this.issueService = issueService
         this.gitKDataService = gitKDataService
@@ -59,7 +58,7 @@ class GitGreenMerger {
     }
 
     PullRequest getPullRequest(int prNumber) {
-        pullRequestService.getPullRequest(repositoryId, prNumber)
+        pullRequestMergeService.getPullRequest(repositoryId, prNumber)
     }
 
     PullRequestMergeResult handleOpenPullRequests(List<Issue> openIssues, boolean defaultOnly, boolean dryRun) {
@@ -102,14 +101,21 @@ class GitGreenMerger {
                 println "Merging PR " + prNumber
             } else {
                 try {
-                    pullRequestService.merge(repositoryId, prNumber, "Auto-merged")
+                    pullRequestMergeService.merge(repositoryId, prNumber, "Auto-merged", PullRequestMergeService.MergeMethod.SQUASH)
                     println "Auto-Merged PR " + prNumber
-                    gitKDataService.deleteReference(repositoryId, pullRequest.getHead().getRef())
+                    try {
+                        gitKDataService.deleteReference(repositoryId, pullRequest.getHead().getRef())
+                    }
+                    catch (Exception e) {
+                        println "FAILED deleting merged branch " + pullRequest.getHead().getRef()
+                        println "error: " + e
+                    }
                     gitExec.gitPull('--prune --progress')
                     pullRequest.setMerged(true)
                 }
                 catch (Exception e) {
                     println "FAILED merging PR " + prNumber
+                    println "error: " + e
                 }
             }
         } else {

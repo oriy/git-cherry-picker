@@ -1,10 +1,13 @@
 package com.jacky.git
 
-import org.eclipse.egit.github.core.*
+
+import org.eclipse.egit.github.core.IRepositoryIdProvider
+import org.eclipse.egit.github.core.PullRequest
+import org.eclipse.egit.github.core.PullRequestMarker
+import org.eclipse.egit.github.core.User
 import org.eclipse.egit.github.core.client.GitHubClient
 import org.eclipse.egit.github.core.client.GitHubRequest
 import org.eclipse.egit.github.core.service.IssueService
-import org.eclipse.egit.github.core.service.PullRequestService
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -38,7 +41,7 @@ class GitGreenMergerTest {
     GitHubClient gitHubClient
 
     @Mock
-    PullRequestService pullRequestService
+    PullRequestMergeService pullRequestMergeService
 
     @Mock
     PullRequestStatusService pullRequestStatusService
@@ -65,11 +68,12 @@ class GitGreenMergerTest {
 
     @Before
     public void init() {
-        gitGreenMerger = new GitGreenMerger(gitCommandExecutor, gitHubClient, pullRequestService, pullRequestStatusService,
+        gitGreenMerger = new GitGreenMerger(gitCommandExecutor, gitHubClient,
+                                            pullRequestMergeService, pullRequestStatusService,
                                             issueService, gitKDataService, repositoryId)
 
         prHead = new PullRequestMarker().setLabel('repo:branch')
-        Mockito.when(pullRequestService.getPullRequest(repositoryId, PR_ID)).thenReturn(pullRequest)
+        Mockito.when(pullRequestMergeService.getPullRequest(repositoryId, PR_ID)).thenReturn(pullRequest)
         Mockito.when(pullRequest.getNumber()).thenReturn(PR_ID)
         Mockito.when(pullRequest.getChangedFiles()).thenReturn(1)
         Mockito.when(pullRequest.getHead()).thenReturn(prHead)
@@ -83,7 +87,7 @@ class GitGreenMergerTest {
         PullRequest actualPullRequest = gitGreenMerger.getPullRequest(PR_ID)
         Assert.assertSame(pullRequest, actualPullRequest)
 
-        Mockito.verify(pullRequestService).getPullRequest(repositoryId, PR_ID)
+        Mockito.verify(pullRequestMergeService).getPullRequest(repositoryId, PR_ID)
     }
 
     @Test
@@ -95,7 +99,7 @@ class GitGreenMergerTest {
 
         Mockito.verify(pullRequest).getUrl()
         Mockito.verify(pullRequestStatusService).updatePullRequestStatus(repositoryId, pullRequest, DEFAULT_BUILD_CONTEXT, BUILD_SUCCESS_DESCRIPTION, STATE_SUCCESS, prUrl)
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestService, pullRequestStatusService, issueService, gitKDataService)
+        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 
     @Test
@@ -103,7 +107,7 @@ class GitGreenMergerTest {
         gitGreenMerger.markDefaultPullRequestBuildSuccess(pullRequest, true)
 
         Mockito.verify(pullRequest).getNumber()
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestService, pullRequestStatusService, issueService, gitKDataService)
+        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 
     @Test
@@ -113,7 +117,7 @@ class GitGreenMergerTest {
         gitGreenMerger.handlePullRequest(pullRequest, false, false)
 
         Mockito.verify(gitHubClient).getUser()
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestService, pullRequestStatusService, issueService, gitKDataService)
+        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 
     @Test
@@ -125,10 +129,10 @@ class GitGreenMergerTest {
 
         Mockito.verify(gitHubClient).getUser()
         Mockito.verify(pullRequestStatusService).getMergeState(repositoryId, prHead, false)
-        Mockito.verify(pullRequestService).merge(repositoryId, PR_ID, "Auto-merged")
+        Mockito.verify(pullRequestMergeService).merge(repositoryId, PR_ID, "Auto-merged", PullRequestMergeService.MergeMethod.SQUASH)
         Mockito.verify(gitKDataService).deleteReference(repositoryId, prHead.getRef())
         Mockito.verify(gitCommandExecutor).gitPull('--prune --progress')
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestService, pullRequestStatusService, issueService, gitKDataService)
+        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 
     @Test
@@ -138,10 +142,10 @@ class GitGreenMergerTest {
 
         gitGreenMerger.handlePullRequest(pullRequest, false, false)
 
-        Mockito.verify(pullRequestService).merge(repositoryId, PR_ID, "Auto-merged")
+        Mockito.verify(pullRequestMergeService).merge(repositoryId, PR_ID, "Auto-merged", PullRequestMergeService.MergeMethod.SQUASH)
         Mockito.verify(gitKDataService).deleteReference(repositoryId, prHead.getRef())
         Mockito.verify(gitCommandExecutor).gitPull('--prune --progress')
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestService, pullRequestStatusService, issueService, gitKDataService)
+        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 
     @Test
@@ -154,7 +158,7 @@ class GitGreenMergerTest {
         Mockito.verify(gitHubClient).getUser()
         Mockito.verify(pullRequestStatusService).getMergeState(repositoryId, prHead, false)
         Mockito.verify(issueService).createComment(repositoryId, PR_ID, gitGreenMerger.RETEST_THIS_PLEASE)
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestService, pullRequestStatusService, issueService, gitKDataService)
+        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 
     @Test
@@ -182,7 +186,7 @@ class GitGreenMergerTest {
 
         Mockito.verify(gitHubClient).getUser()
         Mockito.verify(pullRequestStatusService).getMergeState(repositoryId, prHead, false)
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestService, pullRequestStatusService, issueService, gitKDataService)
+        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 
     @Test
@@ -197,6 +201,6 @@ class GitGreenMergerTest {
 
         Mockito.verify(gitHubClient).getUser()
         Mockito.verify(pullRequestStatusService).getMergeState(repositoryId, prHead, true)
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestService, pullRequestStatusService, issueService, gitKDataService)
+        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 }
