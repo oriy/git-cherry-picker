@@ -258,7 +258,7 @@ class AutoCherryPicksPR {
         PullRequest pr = new PullRequest()
                 .setTitle(CHERRY_PICK_TITLE + ' ' + commitHash.substring(0, 7) + ': ' + commit.commitMessage)
                 .setBody(CHERRY_PICK_BODY + ' of ' + commitHash)
-                .setHead(new PullRequestMarker().setLabel(headBranch))
+                .setHead(new PullRequestMarker().setUser(user).setLabel(headBranch))
                 .setBase(new PullRequestMarker().setLabel(baseBranch))
         PullRequest prResponse = pullRequestService.createPullRequest(repositoryId, pr)
         int prNumber = prResponse.getNumber()

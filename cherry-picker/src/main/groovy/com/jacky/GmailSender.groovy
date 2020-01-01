@@ -1,7 +1,5 @@
 package com.jacky
 
-import com.jacky.git.ConfigurationUtil
-
 import javax.mail.Address
 import javax.mail.Session
 
