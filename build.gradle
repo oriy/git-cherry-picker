@@ -46,4 +46,13 @@ subprojects {
         testImplementation library.junit
         testImplementation library.hamcrest
     }
+
+    test {
+        defaultCharacterEncoding = "UTF-8"
+        testLogging {
+            showStackTraces = true
+            exceptionFormat = 'full'
+            events "STARTED", "PASSED", "FAILED", "SKIPPED"
+        }
+    }
 }
