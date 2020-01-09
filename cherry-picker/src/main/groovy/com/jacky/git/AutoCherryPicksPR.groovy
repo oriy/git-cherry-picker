@@ -145,7 +145,7 @@ class AutoCherryPicksPR {
 
             gitExec.gitCheckout(localTargetBranch)
 
-            if (shouldCommitBeCherryPicked(commit)) {
+            if (shouldCommitBeCherryPicked(commitHash, repositoryCommit.getCommit().getMessage())) {
 
                 String branchName = getBranchName(commit)
                 if (gitExec.branchExists(branchName)) {
@@ -348,9 +348,13 @@ class AutoCherryPicksPR {
         return getBranchName(commit.commitHash)
     }
 
-    static boolean shouldCommitBeCherryPicked(CherryPicksResult commit) {
-        def msg = commit.commitMessage.toLowerCase()
-        return ! doNotCherryPickMessages.matcher(msg).find()
+    static boolean shouldCommitBeCherryPicked(String commitHash, String commitMessage) {
+        def msg = commitMessage.toLowerCase()
+        def shouldSkip = doNotCherryPickMessages.matcher(msg).find()
+        if (shouldSkip) {
+            println("Skipping cherry-pick of commit $commitHash '${commitMessage}'")
+        }
+        return ! shouldSkip
     }
 
 }

@@ -41,13 +41,13 @@ class AutoCherryPicksPRTest {
     @Test
     public void testShouldCommitBeCherryPickedReturnsTrue() throws Exception {
         CherryPicksResult cherryPicksResult = generateCherryPickResult("this is a regular commit message")
-        assertTrue(shouldCommitBeCherryPicked(cherryPicksResult))
+        assertTrue(shouldCommitBeCherryPicked(cherryPicksResult.commitHash, cherryPicksResult.commitMessage))
     }
 
     @Test
     public void testShouldCommitBeCherryPickedReturnsFalseForNoCherryPickPhrase() throws Exception {
-        CherryPicksResult cherryPicksResult = generateCherryPickResult("this commit message will not be cherry picked --> no-cherry-pick")
-        assertFalse(shouldCommitBeCherryPicked(cherryPicksResult))
+        CherryPicksResult cherryPicksResult = generateCherryPickResult("this commit message will not be cherry picked \n\n no-cherry-pick")
+        assertFalse(shouldCommitBeCherryPicked(cherryPicksResult.commitHash, cherryPicksResult.commitMessage))
     }
 
     private static CherryPicksResult generateCherryPickResult(String commitMessage) {
