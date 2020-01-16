@@ -58,34 +58,57 @@ class GitCommandExecutor {
             String stringCommandToExecute = commandToExecute.replaceAll("(//.*):.*@", "\$1@")
             printOut.println '[DEBUG] executing gitCommand \'' + stringCommandToExecute + '\''
         }
-        def process = commandToExecute.execute((String[])null, gitCommand.getRepoDir())
 
-        def outBuffer = new ByteArrayOutputStream()
-        def errBuffer = new ByteArrayOutputStream()
+        int maxAttempts = gitCommand.maxAttempts
+        int attempt = 1
 
-        if (gitCommand.isDiscardOutput()) {
-            if (verbose) {
-                process.consumeProcessOutput((Appendable)printOut, printOut)
+        String output = ''
+        String error = ''
+        int exitValue = 0
+        boolean retry = true
+
+        while (retry) {
+
+            def process = commandToExecute.execute((String[]) null, gitCommand.getRepoDir())
+
+            def outBuffer = new ByteArrayOutputStream()
+            def errBuffer = new ByteArrayOutputStream()
+
+            if (gitCommand.isDiscardOutput()) {
+                if (verbose) {
+                    process.consumeProcessOutput((Appendable) printOut, printOut)
+                } else {
+                    process.consumeProcessOutput(outBuffer, errBuffer)
+                }
             } else {
                 process.consumeProcessOutput(outBuffer, errBuffer)
             }
-        } else {
-            process.consumeProcessOutput(outBuffer, errBuffer)
-        }
 
-        process.waitFor()
+            process.waitFor()
 
-        String output = outBuffer.toString()
-        String error = errBuffer.toString()
-        int exitValue = process.exitValue()
+            output = outBuffer.toString()
+            error = errBuffer.toString()
+            exitValue = process.exitValue()
 
-        if (verbose) {
-            if (!gitCommand.isDiscardOutput()) {
-                printOut.println output
-                printOut.println error
+            if (verbose) {
+                if (!gitCommand.isDiscardOutput()) {
+                    printOut.println output
+                    printOut.println error
 
+                }
+                printOut.println '[DEBUG] exit value : ' + exitValue \
+                                + ((attempt > 1) ? ", attempt #$attempt" : '') \
+                                + '\n'
             }
-            printOut.println '[DEBUG] exit value : ' + exitValue
+
+            if (gitCommand.retryOnEmptyResponse) {
+                retry = GitCommandResult.isEmptyResponse(output)
+            }
+
+            retry &= (++attempt <= maxAttempts)
+            if (retry) {
+                sleep(1000)
+            }
         }
 
         return new GitCommandResult(exitValue: exitValue, output: output, error: error)
@@ -118,8 +141,8 @@ class GitCommandExecutor {
         gitCommand("git log $branchName --pretty=format:|~entry~||~author~|%an|~!author~||~commit_date~|%cd|~!commit_date~||~message_body~|%b|~!message_body~||~message_subject~|%s|~!message_subject~||~!entry~|\n")
     }
 
-    public GitCommandResult gitLog(String branchName) {
-        execute(gitLogCommand(branchName))
+    public GitCommandResult gitLog(String branchName, int maxAttempts = 1) {
+        execute(gitLogCommand(branchName).maxAttempts(maxAttempts).retryOnEmptyResponse(maxAttempts > 1))
     }
 
     public GitCommand gitFetchCommand(String flags = '') {
@@ -174,8 +197,8 @@ class GitCommandExecutor {
         gitCommand("git cherry -v $targetBranch $sourceBranch")
     }
 
-    public GitCommandResult gitCherryDiff(String targetBranch, String sourceBranch) {
-        execute(gitCherryDiffCommand(targetBranch, sourceBranch))
+    public GitCommandResult gitCherryDiff(String targetBranch, String sourceBranch, int maxAttempts = 1) {
+        execute(gitCherryDiffCommand(targetBranch, sourceBranch).maxAttempts(maxAttempts).retryOnEmptyResponse(maxAttempts > 1))
     }
 
     public GitCommand gitShowRemoteBranchCommand(String branchName) {

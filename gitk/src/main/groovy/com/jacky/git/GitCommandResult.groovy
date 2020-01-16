@@ -17,4 +17,12 @@ class GitCommandResult {
     boolean failed() {
         !succeeded()
     }
+
+    boolean isEmptyResponse() {
+        isEmptyResponse(output)
+    }
+
+    static boolean isEmptyResponse(String response) {
+        response.isEmpty() || response.replaceAll("[ \n\t]+", '').isEmpty()
+    }
 }

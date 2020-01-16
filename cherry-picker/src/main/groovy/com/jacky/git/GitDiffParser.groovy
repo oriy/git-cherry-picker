@@ -11,6 +11,8 @@ import org.codehaus.groovy.runtime.StringGroovyMethods
  */
 class GitDiffParser {
 
+    static final int MAX_ATTEMPTS = 10
+
     private GitCommandExecutor gitCommandExecutor
 
     GitDiffParser(GitCommandExecutor gitCommandExecutor) {
@@ -18,9 +20,9 @@ class GitDiffParser {
     }
 
     public List<CherryPicksResult> findCommitsToCherryPick(String sourceBranch, String targetBranch) {
-        GitCommandResult result = gitCommandExecutor.gitCherryDiff(targetBranch, sourceBranch)
+        GitCommandResult result = gitCommandExecutor.gitCherryDiff(targetBranch, sourceBranch, MAX_ATTEMPTS)
 
-        if (result.output.isEmpty()) {
+        if (result.isEmptyResponse()) {
             throw new IllegalStateException(String.format("cherry pick diff failed unexpectedly\n%s", result.error))
         }
 
@@ -35,8 +37,8 @@ class GitDiffParser {
             }
         }
 
-        GitCommandResult logResult = gitCommandExecutor.gitLog("$sourceBranch..$targetBranch")
-        if (logResult.output.isEmpty()) {
+        GitCommandResult logResult = gitCommandExecutor.gitLog("$sourceBranch..$targetBranch", MAX_ATTEMPTS)
+        if (logResult.isEmptyResponse()) {
             throw new IllegalStateException(String.format("git log failed unexpectedly\n%s", logResult.error))
         }
         GPathResult logXml = convertLogToXml(logResult.output)

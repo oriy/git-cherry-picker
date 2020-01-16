@@ -8,10 +8,22 @@ package com.jacky.git
 class GitCommand {
     String command
     File repoDir
+    int maxAttempts = 1
+    boolean retryOnEmptyResponse
     boolean discardOutput
 
     public GitCommand(String command) {
         this.command = command
+    }
+
+    public GitCommand maxAttempts(int maxAttempts) {
+        this.maxAttempts = maxAttempts
+        return this
+    }
+
+    public GitCommand retryOnEmptyResponse(boolean retryOnEmptyResponse) {
+        this.retryOnEmptyResponse = retryOnEmptyResponse
+        return this
     }
 
     public GitCommand discardOutput(boolean discardOutput) {
