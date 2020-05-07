@@ -39,7 +39,7 @@ class GitDiffParser {
 
         GitCommandResult logResult = gitCommandExecutor.gitLog("$sourceBranch..$targetBranch", MAX_ATTEMPTS)
         if (logResult.isEmptyResponse()) {
-            throw new IllegalStateException(String.format("git log failed unexpectedly\n%s", logResult.error))
+            println "git log returned empty list"
         }
         GPathResult logXml = convertLogToXml(logResult.output)
 
