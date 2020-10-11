@@ -157,7 +157,7 @@ class GitGreenMergerTest {
 
         Mockito.verify(gitHubClient).getUser()
         Mockito.verify(pullRequestStatusService).getMergeState(repositoryId, prHead, false)
-        Mockito.verify(issueService).createComment(repositoryId, PR_ID, gitGreenMerger.RETEST_THIS_PLEASE)
+        Mockito.verify(issueService).createComment(repositoryId, PR_ID, gitGreenMerger.RUN_TESTS)
         Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 

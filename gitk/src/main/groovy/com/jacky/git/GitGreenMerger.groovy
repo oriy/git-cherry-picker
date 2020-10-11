@@ -18,7 +18,7 @@ import static org.eclipse.egit.github.core.CommitStatus.STATE_SUCCESS
  * Date: 06/03/2017.
  */
 class GitGreenMerger {
-    public static final String RETEST_THIS_PLEASE = 'retest this please'
+    public static final String RUN_TESTS = 'run tests'
 
     final GitCommandExecutor gitExec
     final GitHubClient gitHubClient
@@ -121,8 +121,8 @@ class GitGreenMerger {
         } else {
             println('PR ' + prNumber + ' state: ' + mergeState.getDescription())
             if (mergeState.isBuildPending()) {
-                println('PR ' + prNumber + ' ' + RETEST_THIS_PLEASE)
-                issueService.createComment(repositoryId, prNumber, RETEST_THIS_PLEASE)
+                println('PR ' + prNumber + ' ' + RUN_TESTS)
+                issueService.createComment(repositoryId, prNumber, RUN_TESTS)
             }
         }
         println('')
