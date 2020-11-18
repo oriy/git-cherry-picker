@@ -101,7 +101,7 @@ class GitGreenMerger {
                 println "Merging PR " + prNumber
             } else {
                 try {
-                    pullRequestMergeService.merge(repositoryId, prNumber, "Auto-merged", PullRequestMergeService.MergeMethod.SQUASH)
+                    pullRequestMergeService.merge(repositoryId, prNumber, "Auto-merged", PullRequestMergeService.MergeMethod.MERGE)
                     println "Auto-Merged PR " + prNumber
                     try {
                         gitKDataService.deleteReference(repositoryId, pullRequest.getHead().getRef())
