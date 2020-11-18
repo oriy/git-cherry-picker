@@ -3,7 +3,7 @@ repository: "git-cherry-picker"
 organization: "locusview"
 gitUserName: "nortecview"
 gitUserEmail: "build@locusview.com"
-gitUserPass: "YOBxBrVUczXqs6Scmf5aiw"
+gitUserPass: "fEuTcF03umpcmlIGiNiuC4q9cVj88fJDGE2qKoyoTyq-5cRxU8AcgggKztdSGyb4"
 gmailUser: "nortecview.jenkins@gmail.com"
 gmailPass: "bIfWQ7zZMsqjWNRyqwEQow"
 approverTokens:
