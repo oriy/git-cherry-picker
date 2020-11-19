@@ -103,13 +103,7 @@ class GitGreenMerger {
                 try {
                     pullRequestMergeService.merge(repositoryId, prNumber, "Auto-merged", PullRequestMergeService.MergeMethod.MERGE)
                     println "Auto-Merged PR " + prNumber
-                    try {
-                        gitKDataService.deleteReference(repositoryId, pullRequest.getHead().getRef())
-                    }
-                    catch (Exception e) {
-                        println "FAILED deleting merged branch " + pullRequest.getHead().getRef()
-                        println "error: " + e
-                    }
+
                     gitExec.gitPull('--prune --progress')
                     pullRequest.setMerged(true)
                 }
