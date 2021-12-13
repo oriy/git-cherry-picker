@@ -8,7 +8,7 @@ ext.library = [
     github: 'org.eclipse.mylyn.github:org.eclipse.egit.github.core:2.1.5',
     jackson_yaml: 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.8.6',
     jackson_databind: 'com.fasterxml.jackson.core:jackson-databind:2.8.6',
-    mail: 'javax.mail:mail:1.4.5',
+    mail: 'javax.mail:mail:1.4.7',
 
     junit: 'junit:junit-dep:4.10',
     hamcrest: 'org.hamcrest:hamcrest-all:1.3',
