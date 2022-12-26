@@ -3,7 +3,7 @@ plugins {
 }
 
 ext.library = [
-    groovy: 'org.codehaus.groovy:groovy-all:2.3.4',
+    groovy: 'org.codehaus.groovy:groovy-all:3.0.14',
     cli: 'commons-cli:commons-cli:1.2',
     github: 'org.eclipse.mylyn.github:org.eclipse.egit.github.core:2.1.5',
     jackson_yaml: 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.8.6',
