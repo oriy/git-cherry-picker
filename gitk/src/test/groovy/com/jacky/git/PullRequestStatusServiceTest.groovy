@@ -1,31 +1,31 @@
 package com.jacky.git
 
 import com.google.gson.internal.StringMap
-import org.eclipse.egit.github.core.CommitStatus
 import org.eclipse.egit.github.core.IRepositoryIdProvider
 import org.eclipse.egit.github.core.PullRequest
 import org.eclipse.egit.github.core.PullRequestMarker
 import org.eclipse.egit.github.core.client.GitHubClient
 import org.eclipse.egit.github.core.client.GitHubRequest
 import org.eclipse.egit.github.core.client.GitHubResponse
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.Mock
-import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnitRunner
+
+import java.lang.reflect.Type
 
 import static com.jacky.git.GitHubUtil.OWNER
 import static com.jacky.git.PullRequestStatus.*
 import static com.jacky.git.PullRequestStatusService.DEFAULT_BUILD_CONTEXT
 import static com.jacky.git.PullRequestStatusService.STATUSES
-import static org.eclipse.egit.github.core.CommitStatus.STATE_FAILURE
-import static org.eclipse.egit.github.core.CommitStatus.STATE_PENDING
-import static org.eclipse.egit.github.core.CommitStatus.STATE_SUCCESS
-import static org.junit.Assert.assertEquals
+import static org.eclipse.egit.github.core.CommitStatus.*
+import static org.junit.Assert.*
+import static org.mockito.ArgumentMatchers.any
+import static org.mockito.ArgumentMatchers.eq
+import static org.mockito.Mockito.*
 
 /**
  * User: oriy
@@ -67,10 +67,10 @@ class PullRequestStatusServiceTest {
         successfulResponseString.put(STATUSES, [defaultContextStatus])
         GitHubResponse successfulPrResponse = new GitHubResponse(mockConnention, successfulResponseString)
 
-        Mockito.when(gitHubClient.get(requestCaptor.capture())).thenReturn(successfulPrResponse)
+        when(gitHubClient.get(requestCaptor.capture())).thenReturn(successfulPrResponse)
 
         PullRequestMarker successfulPrMarker = new PullRequestMarker().setSha('cha123').setLabel('repo:successBranch')
-        Mockito.when(pullRequest.getHead()).thenReturn(successfulPrMarker)
+        when(pullRequest.getHead()).thenReturn(successfulPrMarker)
 
         GitMergeState actualState = pullRequestStatusService.getMergeState(repositoryId, successfulPrMarker)
 
@@ -79,11 +79,11 @@ class PullRequestStatusServiceTest {
 
         assertEquals('successBranch', actualState.getBranchToMerge())
         assertEquals('', actualState.getDescription())
-        Assert.assertTrue(actualState.isMergeable())
-        Assert.assertFalse(actualState.isBuildPending())
+        assertTrue(actualState.isMergeable())
+        assertFalse(actualState.isBuildPending())
 
-        Mockito.verify(gitHubClient).get(request)
-        Mockito.verifyNoMoreInteractions(gitHubClient)
+        verify(gitHubClient).get(request)
+        verifyNoMoreInteractions(gitHubClient)
     }
 
     @Test
@@ -92,22 +92,22 @@ class PullRequestStatusServiceTest {
         successfulResponseString.put(STATE, STATE_SUCCESS)
         GitHubResponse successfulPrResponse = new GitHubResponse(mockConnention, successfulResponseString)
 
-        Mockito.when(gitHubClient.get(requestCaptor.capture())).thenReturn(successfulPrResponse)
+        when(gitHubClient.get(requestCaptor.capture())).thenReturn(successfulPrResponse)
 
         PullRequestMarker successfulPrMarker = new PullRequestMarker().setSha('cha123').setLabel('repo:successBranch')
-        Mockito.when(pullRequest.getHead()).thenReturn(successfulPrMarker)
+        when(pullRequest.getHead()).thenReturn(successfulPrMarker)
 
         GitMergeState actualState = pullRequestStatusService.getMergeState(repositoryId, successfulPrMarker)
 
         GitHubRequest request = requestCaptor.getValue()
         assertEquals("/repos/$OWNER/repo/commits/cha123/status".toString(), request.getUri())
 
-        Assert.assertNull(actualState.getBranchToMerge())
-        Assert.assertFalse(actualState.isMergeable())
-        Assert.assertTrue(actualState.isBuildPending())
+        assertNull(actualState.getBranchToMerge())
+        assertFalse(actualState.isMergeable())
+        assertTrue(actualState.isBuildPending())
 
-        Mockito.verify(gitHubClient).get(request)
-        Mockito.verifyNoMoreInteractions(gitHubClient)
+        verify(gitHubClient).get(request)
+        verifyNoMoreInteractions(gitHubClient)
     }
 
     @Test
@@ -119,10 +119,10 @@ class PullRequestStatusServiceTest {
         combinedResponseString.put(STATE, STATE_FAILURE)
         GitHubResponse combinedPrResponse = new GitHubResponse(mockConnention, combinedResponseString)
 
-        Mockito.when(gitHubClient.get(requestCaptor.capture())).thenReturn(combinedPrResponse)
+        when(gitHubClient.get(requestCaptor.capture())).thenReturn(combinedPrResponse)
 
         PullRequestMarker successfulPrMarker = new PullRequestMarker().setSha('cha123').setLabel('repo:successBranch')
-        Mockito.when(pullRequest.getHead()).thenReturn(successfulPrMarker)
+        when(pullRequest.getHead()).thenReturn(successfulPrMarker)
 
         GitMergeState actualState = pullRequestStatusService.getMergeState(repositoryId, successfulPrMarker, true)
 
@@ -131,11 +131,11 @@ class PullRequestStatusServiceTest {
 
         assertEquals('successBranch', actualState.getBranchToMerge())
         assertEquals('', actualState.getDescription())
-        Assert.assertTrue(actualState.isMergeable())
-        Assert.assertFalse(actualState.isBuildPending())
+        assertTrue(actualState.isMergeable())
+        assertFalse(actualState.isBuildPending())
 
-        Mockito.verify(gitHubClient).get(request)
-        Mockito.verifyNoMoreInteractions(gitHubClient)
+        verify(gitHubClient).get(request)
+        verifyNoMoreInteractions(gitHubClient)
     }
 
     @Test
@@ -146,23 +146,23 @@ class PullRequestStatusServiceTest {
         combinedResponseString.put(STATUSES, [unsuccessfulResponseString])
         combinedResponseString.put(STATE, state)
         GitHubResponse combinedPrResponse = new GitHubResponse(mockConnention, combinedResponseString)
-        Mockito.when(gitHubClient.get(requestCaptor.capture())).thenReturn(combinedPrResponse)
+        when(gitHubClient.get(requestCaptor.capture())).thenReturn(combinedPrResponse)
 
         PullRequestMarker unsuccessfulPrMarker = new PullRequestMarker().setSha('cha123').setLabel('repo:failBranch')
-        Mockito.when(pullRequest.getHead()).thenReturn(unsuccessfulPrMarker)
+        when(pullRequest.getHead()).thenReturn(unsuccessfulPrMarker)
 
         GitMergeState actualState = pullRequestStatusService.getMergeState(repositoryId, unsuccessfulPrMarker)
 
         GitHubRequest request = requestCaptor.getValue()
         assertEquals("/repos/$OWNER/repo/commits/cha123/status".toString(), request.getUri())
 
-        Assert.assertNull(actualState.getBranchToMerge())
+        assertNull(actualState.getBranchToMerge())
         assertEquals('commit status "any_non_successful_state"', actualState.getDescription())
-        Assert.assertFalse(actualState.isMergeable())
-        Assert.assertFalse(actualState.isBuildPending())
+        assertFalse(actualState.isMergeable())
+        assertFalse(actualState.isBuildPending())
 
-        Mockito.verify(gitHubClient).get(request)
-        Mockito.verifyNoMoreInteractions(gitHubClient)
+        verify(gitHubClient).get(request)
+        verifyNoMoreInteractions(gitHubClient)
     }
 
     @Test
@@ -173,23 +173,23 @@ class PullRequestStatusServiceTest {
         combinedResponseString.put(STATE, STATE_PENDING)
         GitHubResponse combinedPrResponse = new GitHubResponse(mockConnention, combinedResponseString)
 
-        Mockito.when(gitHubClient.get(requestCaptor.capture())).thenReturn(combinedPrResponse)
+        when(gitHubClient.get(requestCaptor.capture())).thenReturn(combinedPrResponse)
 
         PullRequestMarker pendingPrMarker = new PullRequestMarker().setSha('cha123').setLabel('repo:prBranch')
-        Mockito.when(pullRequest.getHead()).thenReturn(pendingPrMarker)
+        when(pullRequest.getHead()).thenReturn(pendingPrMarker)
 
         GitMergeState actualState = pullRequestStatusService.getMergeState(repositoryId, pendingPrMarker)
 
         GitHubRequest request = requestCaptor.getValue()
         assertEquals("/repos/$OWNER/repo/commits/cha123/status".toString(), request.getUri())
 
-        Assert.assertNull(actualState.getBranchToMerge())
+        assertNull(actualState.getBranchToMerge())
         assertEquals('commit status "pending"', actualState.getDescription())
-        Assert.assertFalse(actualState.isMergeable())
-        Assert.assertTrue(actualState.isBuildPending())
+        assertFalse(actualState.isMergeable())
+        assertTrue(actualState.isBuildPending())
 
-        Mockito.verify(gitHubClient).get(request)
-        Mockito.verifyNoMoreInteractions(gitHubClient)
+        verify(gitHubClient).get(request)
+        verifyNoMoreInteractions(gitHubClient)
     }
 
     @Test
@@ -197,7 +197,7 @@ class PullRequestStatusServiceTest {
         String expectedUri = "/repos/$OWNER/repo/statuses/c00c0aa6e4607ff8e7481f7599fe1502388f209c".toString()
 
         PullRequestMarker unsuccessfulPrMarker = new PullRequestMarker().setSha('c00c0aa6e4607ff8e7481f7599fe1502388f209c').setLabel('repo:branch')
-        Mockito.when(pullRequest.getHead()).thenReturn(unsuccessfulPrMarker)
+        when(pullRequest.getHead()).thenReturn(unsuccessfulPrMarker)
 
         String context = 'review context'
         String description = 'description'
@@ -206,10 +206,10 @@ class PullRequestStatusServiceTest {
 
         pullRequestStatusService.updatePullRequestStatus(repositoryId, pullRequest, context, description, state, targetUrl)
 
-        Mockito.verify(gitHubClient).post(Mockito.eq(expectedUri), paramsCaptor.capture(), Mockito.eq(CommitStatus.class))
+        verify(gitHubClient).post(eq(expectedUri), paramsCaptor.capture(), any(Type.class))
 
         Map<String, String> params = paramsCaptor.value
-        Assert.assertEquals(4, params.size())
+        assertEquals(4, params.size())
         assertEquals(context, params.get(CONTEXT))
         assertEquals(state, params.get(STATE))
         assertEquals(description, params.get(DESCRIPTION))

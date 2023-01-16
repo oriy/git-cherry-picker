@@ -52,7 +52,7 @@ class GitCommandExecutor {
         execute(gitCommand.discardOutput(discardOutput), repoDir)
     }
 
-    public GitCommandResult execute(GitCommand gitCommand) {
+    public GitCommandResult execute(GitCommand gitCommand, String[] envp = (String[]) null) {
         def commandToExecute = gitCommand.getCommand()
         if (verbose) {
             String stringCommandToExecute = commandToExecute.replaceAll("(//.*):.*@", "\$1@")
@@ -69,7 +69,7 @@ class GitCommandExecutor {
 
         while (retry) {
 
-            def process = commandToExecute.execute((String[]) null, gitCommand.getRepoDir())
+            def process = commandToExecute.execute(envp, gitCommand.getRepoDir())
 
             def outBuffer = new ByteArrayOutputStream()
             def errBuffer = new ByteArrayOutputStream()
@@ -231,15 +231,9 @@ class GitCommandExecutor {
 
     public List<GitCommand> gitCherryPickRecordMergeCommands(String commitHash) {
         [ gitCommand("git cherry-pick -x --strategy=ours $commitHash"),
-          gitCommand('git commit --allow-empty --no-edit') ]
-    }
-
-    public GitCommandResult gitCherryPickRecordMerge(String commitHash) {
-        GitCommandResult gitCommandResult = null
-        gitCherryPickRecordMergeCommands(commitHash).each { gitCommand ->
-            gitCommandResult = execute(gitCommand)
-        }
-        gitCommandResult
+          gitCommand('git commit --allow-empty --no-edit'),
+          gitCommand('commitMsg="$(git log --oneline -1)"'),
+          gitCommand('git commit --allow-empty --amend --message="cherry pick SKIP $commitMsg"') ]
     }
 
     public GitCommand gitResetLastCommitCommand() {

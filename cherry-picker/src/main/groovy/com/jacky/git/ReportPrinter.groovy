@@ -6,11 +6,11 @@ package com.jacky.git
  */
 class ReportPrinter {
 
-    static GString printHtml(CommitDescription commit, CommitResult commitResult, String url = '', String createDate = '') {
-        "<li><font color='#${htmlColor(commitResult)}'>${printHtmlContent(commit, commitResult, url, createDate)}</font></li>\n"
+    static GString printHtml(CommitDescription commit, CommitResult commitResult, String url = '') {
+        "<li><font color='#${htmlColor(commitResult)}'>${printHtmlContent(commit, commitResult, url)}</font></li>\n"
     }
 
-    static GString printHtmlContent(CommitDescription commit, CommitResult commitResult, String url = '', String createDate = '') {
+    static GString printHtmlContent(CommitDescription commit, CommitResult commitResult, String url = '') {
         " ${htmlResult(commitResult, url)}" +
         " commit: <b>${commit.getCommitHash()}</b><br/>" +
         " User: <b>${commit.getUserName()}</b>, Author: ${commit.getCommitUserName()} <b>${commit.getUserEmail()}</b>;<br/>" +

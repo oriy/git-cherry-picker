@@ -8,7 +8,6 @@ import org.eclipse.egit.github.core.User
 import org.eclipse.egit.github.core.client.GitHubClient
 import org.eclipse.egit.github.core.client.GitHubRequest
 import org.eclipse.egit.github.core.service.IssueService
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,6 +20,13 @@ import org.mockito.junit.MockitoJUnitRunner
 import static com.jacky.git.PullRequestStatusService.BUILD_SUCCESS_DESCRIPTION
 import static com.jacky.git.PullRequestStatusService.DEFAULT_BUILD_CONTEXT
 import static org.eclipse.egit.github.core.CommitStatus.STATE_SUCCESS
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertNull
+import static org.junit.Assert.assertSame
+import static org.mockito.Mockito.verify
+import static org.mockito.Mockito.verifyNoMoreInteractions
+import static org.mockito.Mockito.when
 
 /**
  * User: oriy
@@ -73,134 +79,132 @@ class GitGreenMergerTest {
                                             issueService, gitKDataService, repositoryId)
 
         prHead = new PullRequestMarker().setLabel('repo:branch')
-        Mockito.when(pullRequestMergeService.getPullRequest(repositoryId, PR_ID)).thenReturn(pullRequest)
-        Mockito.when(pullRequest.getNumber()).thenReturn(PR_ID)
-        Mockito.when(pullRequest.getChangedFiles()).thenReturn(1)
-        Mockito.when(pullRequest.getHead()).thenReturn(prHead)
-        Mockito.when(pullRequest.getUser()).thenReturn(user)
-        Mockito.when(user.getLogin()).thenReturn('admin')
-        Mockito.when(gitHubClient.getUser()).thenReturn('admin')
+        when(pullRequestMergeService.getPullRequest(repositoryId, PR_ID)).thenReturn(pullRequest)
+        when(pullRequest.getNumber()).thenReturn(PR_ID)
+        when(pullRequest.getChangedFiles()).thenReturn(1)
+        when(pullRequest.getHead()).thenReturn(prHead)
+        when(pullRequest.getUser()).thenReturn(user)
+        when(user.getLogin()).thenReturn('admin')
+        when(gitHubClient.getUser()).thenReturn('admin')
     }
 
     @Test
     public void testGetPullRequest() {
         PullRequest actualPullRequest = gitGreenMerger.getPullRequest(PR_ID)
-        Assert.assertSame(pullRequest, actualPullRequest)
+        assertSame(pullRequest, actualPullRequest)
 
-        Mockito.verify(pullRequestMergeService).getPullRequest(repositoryId, PR_ID)
+        verify(pullRequestMergeService).getPullRequest(repositoryId, PR_ID)
     }
 
     @Test
     public void testMarkDefaultPullRequestBuildSuccess() {
         final String prUrl = 'url'
-        Mockito.when(pullRequest.getUrl()).thenReturn(prUrl)
+        when(pullRequest.getUrl()).thenReturn(prUrl)
 
         gitGreenMerger.markDefaultPullRequestBuildSuccess(pullRequest, false)
 
-        Mockito.verify(pullRequest).getUrl()
-        Mockito.verify(pullRequestStatusService).updatePullRequestStatus(repositoryId, pullRequest, DEFAULT_BUILD_CONTEXT, BUILD_SUCCESS_DESCRIPTION, STATE_SUCCESS, prUrl)
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
+        verify(pullRequest).getUrl()
+        verify(pullRequestStatusService).updatePullRequestStatus(repositoryId, pullRequest, DEFAULT_BUILD_CONTEXT, BUILD_SUCCESS_DESCRIPTION, STATE_SUCCESS, prUrl)
+        verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 
     @Test
     public void testMarkDefaultPullRequestBuildSuccessDryRun() {
         gitGreenMerger.markDefaultPullRequestBuildSuccess(pullRequest, true)
 
-        Mockito.verify(pullRequest).getNumber()
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
+        verify(pullRequest).getNumber()
+        verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 
     @Test
     public void testHandlePullRequestReturnsFalseWhenMerged() {
-        Mockito.when(pullRequest.isMerged()).thenReturn(true)
+        when(pullRequest.isMerged()).thenReturn(true)
 
         gitGreenMerger.handlePullRequest(pullRequest, false, false)
 
-        Mockito.verify(gitHubClient).getUser()
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
+        verify(gitHubClient).getUser()
+        verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 
     @Test
     public void testHandlePullRequestMergesOnPrSuccess() {
-        Mockito.when(pullRequest.isMerged()).thenReturn(false)
-        Mockito.when(pullRequestStatusService.getMergeState(repositoryId, prHead, false)).thenReturn(new GitMergeState(prHead))
+        when(pullRequest.isMerged()).thenReturn(false)
+        when(pullRequestStatusService.getMergeState(repositoryId, prHead, false)).thenReturn(new GitMergeState(prHead))
 
         gitGreenMerger.handlePullRequest(pullRequest, false, false)
 
-        Mockito.verify(gitHubClient).getUser()
-        Mockito.verify(pullRequestStatusService).getMergeState(repositoryId, prHead, false)
-        Mockito.verify(pullRequestMergeService).merge(repositoryId, PR_ID, "Auto-merged", PullRequestMergeService.MergeMethod.SQUASH)
-        Mockito.verify(gitKDataService).deleteReference(repositoryId, prHead.getRef())
-        Mockito.verify(gitCommandExecutor).gitPull('--prune --progress')
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
+        verify(gitHubClient).getUser()
+        verify(pullRequestStatusService).getMergeState(repositoryId, prHead, false)
+        verify(pullRequestMergeService).merge(repositoryId, PR_ID, "Auto-merged", PullRequestMergeService.MergeMethod.MERGE)
+        verify(gitCommandExecutor).gitPull('--prune --progress')
+        verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 
     @Test
     public void testHandlePullRequestMergesIfNoFileHasChanged() {
-        Mockito.when(pullRequest.isMerged()).thenReturn(false)
-        Mockito.when(pullRequest.getChangedFiles()).thenReturn(0)
+        when(pullRequest.isMerged()).thenReturn(false)
+        when(pullRequest.getChangedFiles()).thenReturn(0)
 
         gitGreenMerger.handlePullRequest(pullRequest, false, false)
 
-        Mockito.verify(pullRequestMergeService).merge(repositoryId, PR_ID, "Auto-merged", PullRequestMergeService.MergeMethod.SQUASH)
-        Mockito.verify(gitKDataService).deleteReference(repositoryId, prHead.getRef())
-        Mockito.verify(gitCommandExecutor).gitPull('--prune --progress')
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
+        verify(pullRequestMergeService).merge(repositoryId, PR_ID, "Auto-merged", PullRequestMergeService.MergeMethod.MERGE)
+        verify(gitCommandExecutor).gitPull('--prune --progress')
+        verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 
     @Test
     public void testHandlePullRequestRetestPullRequestIfBuildPending() {
-        Mockito.when(pullRequest.isMerged()).thenReturn(false)
-        Mockito.when(pullRequestStatusService.getMergeState(repositoryId, prHead, false)).thenReturn(new GitMergeState(false, 'waiting', true))
+        when(pullRequest.isMerged()).thenReturn(false)
+        when(pullRequestStatusService.getMergeState(repositoryId, prHead, false)).thenReturn(new GitMergeState(false, 'waiting', true))
 
         gitGreenMerger.handlePullRequest(pullRequest, false, false)
 
-        Mockito.verify(gitHubClient).getUser()
-        Mockito.verify(pullRequestStatusService).getMergeState(repositoryId, prHead, false)
-        Mockito.verify(issueService).createComment(repositoryId, PR_ID, gitGreenMerger.RUN_TESTS)
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
+        verify(gitHubClient).getUser()
+        verify(pullRequestStatusService).getMergeState(repositoryId, prHead, false)
+        verify(issueService).createComment(repositoryId, PR_ID, gitGreenMerger.RUN_TESTS)
+        verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 
     @Test
     public void testPullRequestMergeStateReturnsFalseForAnotherUser() {
         User otherUser = Mockito.mock(User.class)
-        Mockito.when(otherUser.getLogin()).thenReturn('other')
-        Mockito.when(pullRequest.getUser()).thenReturn(otherUser)
+        when(otherUser.getLogin()).thenReturn('other')
+        when(pullRequest.getUser()).thenReturn(otherUser)
 
         GitMergeState actualState = gitGreenMerger.getPullRequestMergeState(repositoryId, pullRequest, false)
 
-        Assert.assertNull(actualState.getBranchToMerge())
-        Assert.assertEquals('Auto-merge is only available for admin', actualState.getDescription())
-        Assert.assertFalse(actualState.isMergeable())
+        assertNull(actualState.getBranchToMerge())
+        assertEquals('Auto-merge is only available for admin', actualState.getDescription())
+        assertFalse(actualState.isMergeable())
     }
 
     @Test
     public void testGetCommitMergeStateOnPrSuccess() {
-        Mockito.when(pullRequest.isMerged()).thenReturn(false)
+        when(pullRequest.isMerged()).thenReturn(false)
         GitMergeState gitMergeState = Mockito.mock(GitMergeState.class)
-        Mockito.when(pullRequestStatusService.getMergeState(repositoryId, prHead, false)).thenReturn(gitMergeState)
+        when(pullRequestStatusService.getMergeState(repositoryId, prHead, false)).thenReturn(gitMergeState)
 
         GitMergeState actualState = gitGreenMerger.getPullRequestMergeState(repositoryId, pullRequest, false)
 
-        Assert.assertSame(gitMergeState, actualState)
+        assertSame(gitMergeState, actualState)
 
-        Mockito.verify(gitHubClient).getUser()
-        Mockito.verify(pullRequestStatusService).getMergeState(repositoryId, prHead, false)
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
+        verify(gitHubClient).getUser()
+        verify(pullRequestStatusService).getMergeState(repositoryId, prHead, false)
+        verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 
     @Test
     public void testGetCommitMergeStateOnDefaultContextOnlySuccess() {
-        Mockito.when(pullRequest.isMerged()).thenReturn(false)
+        when(pullRequest.isMerged()).thenReturn(false)
         GitMergeState gitMergeState = Mockito.mock(GitMergeState.class)
-        Mockito.when(pullRequestStatusService.getMergeState(repositoryId, prHead, true)).thenReturn(gitMergeState)
+        when(pullRequestStatusService.getMergeState(repositoryId, prHead, true)).thenReturn(gitMergeState)
 
         GitMergeState actualState = gitGreenMerger.getPullRequestMergeState(repositoryId, pullRequest, true)
 
-        Assert.assertSame(gitMergeState, actualState)
+        assertSame(gitMergeState, actualState)
 
-        Mockito.verify(gitHubClient).getUser()
-        Mockito.verify(pullRequestStatusService).getMergeState(repositoryId, prHead, true)
-        Mockito.verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
+        verify(gitHubClient).getUser()
+        verify(pullRequestStatusService).getMergeState(repositoryId, prHead, true)
+        verifyNoMoreInteractions(gitCommandExecutor, gitHubClient, pullRequestMergeService, pullRequestStatusService, issueService, gitKDataService)
     }
 }

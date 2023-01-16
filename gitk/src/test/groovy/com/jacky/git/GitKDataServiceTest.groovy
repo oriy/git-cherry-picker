@@ -10,6 +10,8 @@ import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnitRunner
 
 import static com.jacky.git.GitHubUtil.OWNER
+import static org.mockito.ArgumentMatchers.eq
+import static org.mockito.Mockito.verify
 
 /**
  * User: oriy
@@ -35,6 +37,6 @@ class GitKDataServiceTest {
         gitKDataService.deleteReference(repositoryId, 'myRef')
 
         String expectedUri = "/repos/$OWNER/repo/git/refs/heads/myRef"
-        Mockito.verify(gitHubClient).delete(Mockito.eq(expectedUri))
+        verify(gitHubClient).delete(eq(expectedUri))
     }
 }

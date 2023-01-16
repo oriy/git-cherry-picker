@@ -8,8 +8,6 @@ import org.eclipse.egit.github.core.service.IssueService
 import org.eclipse.egit.github.core.service.LabelService
 import org.eclipse.egit.github.core.service.PullRequestService
 
-import java.util.regex.Pattern
-
 import static com.jacky.git.GitHubUtil.CHERRY_PICK_BODY
 import static com.jacky.git.GitHubUtil.CHERRY_PICK_TITLE
 import static com.jacky.git.GitHubUtil.REPOSITORIES_DIR
@@ -17,6 +15,8 @@ import static com.jacky.git.GitHubUtil.getGitHubIssueUrl
 import static com.jacky.git.IssueServiceHelper.getOpenIssuesByQuery
 import static com.jacky.git.ReportPrinter.printHtml
 import static com.jacky.git.ReportPrinter.printHtmlContent
+import static com.jacky.git.SkipCherryPick.isSkipCherryPickMessage
+import static org.eclipse.egit.github.core.service.IssueService.STATE_CLOSED
 import static org.eclipse.egit.github.core.service.IssueService.STATE_OPEN
 
 /**
@@ -31,8 +31,6 @@ class AutoCherryPicksPR {
 
     private static final String REPORT_NAME = 'Auto Cherry Pick Report'
     private static final String LABEL_NAME = 'cherry-pick'
-
-    private static Pattern doNotCherryPickMessages = Pattern.compile("(no|don't|do not|skip):?[ -]?cherry[ -]?pick")
 
     private static final String EMAIL_HEADER = '<body>'
     private static final String EMAIL_FOOTER = '</ul><br><b>Please go over this report and if your code was not merged, it is YOUR responsibility to fix it!</b><br></body>'
@@ -117,13 +115,12 @@ class AutoCherryPicksPR {
         List<Label> labels = [mainLabel, branchLabel]
 
         println("Merging green cherry-pick PRs for label '$branchLabelName'")
-        PullRequestMergeResult pullRequestMergeResult
+        PullRequestMergeResult pullRequestMergeResult = PullRequestMergeResult.empty()
+
         if (!dryRun) {
             GitGreenMerger greenMerger = new GitGreenMerger(gitExec, gitHubClient, repositoryId)
             pullRequestMergeResult = greenMerger.mergeAllMergable(branchLabelName, false, dryRun)
         }
-
-        def shouldPushMaster = false
 
         List<CherryPicksResult> result = gitDiffParser.findCommitsToCherryPick(sourceBranch, targetBranch)
 
@@ -145,7 +142,7 @@ class AutoCherryPicksPR {
 
             gitExec.gitCheckout(localTargetBranch)
 
-            if (shouldCommitBeCherryPicked(commitHash, repositoryCommit.getCommit().getMessage())) {
+            if (shouldCommitBeCherryPicked(repositoryCommit.getCommit())) {
 
                 String branchName = getBranchName(commit)
                 if (gitExec.branchExists(branchName)) {
@@ -170,17 +167,19 @@ class AutoCherryPicksPR {
                 }
 
                 int issueNumber = 1
-                IssueNumberState issueNumberState
 
                 if (failed) {
+                    IssueNumberState issueNumberState
+                    String issueState = STATE_CLOSED
                     if (!dryRun) {
-                        issueNumberState = getOrCreateIssue(gitExec, issueService, repositoryId, commitDescription, commitResult, commitDescription.getUser(), labels)
+                        issueNumberState = getOrCreateIssue(gitExec, issueService, repositoryId, localTargetBranch, commitDescription, commitResult, commitDescription.getUser(), labels)
                         issueNumber = issueNumberState.issueNumber
+                        issueState = issueNumberState.issueState
                     }
 
                     gitExec.gitResetLastCommit()
 
-                    if (issueNumberState.issueState.equals(STATE_OPEN)) {
+                    if (issueState == STATE_OPEN) {
                         if (!dryRun) {
                             shouldSendMail = true
                         }
@@ -192,38 +191,17 @@ class AutoCherryPicksPR {
                 } else {
                     if (!dryRun) {
                         Issue issue = createPR(pullRequestService, pullRequestReviewsService, issueService, repositoryId, localTargetBranch, branchName, commit, commitDescription.getUser(), labels)
-                        issueNumberState = IssueNumberState.fromIssue(issue)
+                        IssueNumberState issueNumberState = IssueNumberState.fromIssue(issue)
                         issueNumber = issueNumberState.issueNumber
                     }
                     gitMergeMail.appendBody(printHtml(commitDescription, CommitResult.PULL_REQUEST, getGitHubIssueUrl(repositoryId, issueNumber)))
                 }
 
             } else {
-                def processOutput = gitExec.gitCherryPickRecordMerge(commitHash)
-                if (processOutput.exitValue == 0) {
-                    gitMergeMail.addCommitToReport(printHtml(commitDescription, CommitResult.RECORD_ONLY, ''), userEmail)
-                    shouldPushMaster = !dryRun
-                } else {
-                    CommitResult commitResult = CommitResult.RECORD_ONLY_FAILED
-                    int issueNumber = 1
-
-                    if (!dryRun) {
-                        issueNumber = getOrCreateIssue(gitExec, issueService, repositoryId, commitDescription, commitResult, commitDescription.getUser(), labels)
-                    }
-                    gitMergeMail.addCommitToReport(printHtml(commitDescription, commitResult, getGitHubIssueUrl(repositoryId, issueNumber)), userEmail)
-                    gitExec.gitResetLastCommit()
-                }
+                gitMergeMail.addCommitToReport(printHtml(commitDescription, CommitResult.RECORD_ONLY, ''), userEmail)
                 shouldSendMail = !dryRun
             }
             gitMergeMail.appendBody("<br/><br/>")
-        }
-
-        // Push master branch (for record-only cherry-picks)
-        if (!dryRun && shouldPushMaster) {
-            def processOutput = gitExec.gitPush(localTargetBranch)
-            if (processOutput.failed()) {
-                throw new RuntimeException("Error pushing into ${localTargetBranch} : ${processOutput.output}")
-            }
         }
 
         if (!dryRun && pullRequestMergeResult.hasOpenPullRequests()) {
@@ -273,6 +251,7 @@ class AutoCherryPicksPR {
     }
 
     private static IssueNumberState getOrCreateIssue(GitCommandExecutor gitExec, IssueService issueService, IRepositoryIdProvider repositoryId,
+                                                     String targetBranch,
                                                      CommitDescription commit, CommitResult commitResult, User user, List<Label> labels) {
         String commitHash = commit.commitHash
         String title = 'FAILED ' + CHERRY_PICK_TITLE + ' ' + commitHash.substring(0, 7)
@@ -282,10 +261,11 @@ class AutoCherryPicksPR {
             return IssueNumberState.fromSearchIssue(issueList.get(0))
         }
 
-        IssueNumberState.fromIssue(createIssue(gitExec, issueService, repositoryId, commit, commitResult, user, labels, commitHash, title))
+        IssueNumberState.fromIssue(createIssue(gitExec, issueService, repositoryId, targetBranch, commit, commitResult, user, labels, commitHash, title))
     }
 
     private static Issue createIssue(GitCommandExecutor gitExec, IssueService issueService, IRepositoryIdProvider repositoryId,
+                                     String targetBranch,
                                      CommitDescription commit, CommitResult commitResult, User user, List<Label> labels, String commitHash, String title) {
         boolean recordOnlyFailed = (commitResult == CommitResult.RECORD_ONLY_FAILED)
 
@@ -295,18 +275,19 @@ class AutoCherryPicksPR {
         bodySb.append(printHtmlContent(commit, commitResult)).append('\n\n')
 
         if (!recordOnlyFailed) {
-            List<GitCommand> gitCommands = getCherryPickCommandsFor(gitExec, commitHash, [gitExec.gitCherryPickCommand(commitHash)])
+            List<GitCommand> gitCommands = getCherryPickCommandsFor(gitExec, targetBranch, commitHash, [gitExec.gitCherryPickCommand(commitHash)])
             StringBuilder cherryPickBlockSb = new StringBuilder()
             cherryPickBlockSb.append(gitCommandsBlock(gitCommands))
-            cherryPickBlockSb.append('<pre>once you resolve conflicts, commit all changes</br>and finally:</pre>\n')
+            cherryPickBlockSb.append('&nbsp; &nbsp; once you resolve conflicts, commit all changes</br>' +
+                    '&nbsp; &nbsp; and finally:\n')
             cherryPickBlockSb.append(gitCommandsBlock([gitPushCommand]))
-            appendDetailsBlock(bodySb, ' For <b>manual :cherries: pick</b> of your commit, use these commands:', cherryPickBlockSb.toString())
+            appendDetailsBlock(bodySb, ' For <b>manual :cherries: pick</b> of your commit: :arrow_down_small:', cherryPickBlockSb.toString())
             bodySb.append('\n\n')
         }
-        List<GitCommand> gitCommands = getCherryPickCommandsFor(gitExec, commitHash, gitExec.gitCherryPickRecordMergeCommands(commitHash))
+        List<GitCommand> gitCommands = getCherryPickCommandsFor(gitExec, targetBranch, commitHash, gitExec.gitCherryPickRecordMergeCommands(commitHash))
         gitCommands.add(gitPushCommand)
         String commandsBlock = gitCommandsBlock(gitCommands)
-        appendDetailsBlock(bodySb, ' Is the commit <b>already :cherries: picked</b>? &nbsp; Would you like to <b>SKIP cherry-pick</b>? &nbsp; use these commands:', commandsBlock)
+        appendDetailsBlock(bodySb, ' Is the commit <b>already :cherries: picked</b>? :arrow_down_small:<br/>&nbsp; &nbsp;Would you like to <b>SKIP cherry-pick</b>? :arrow_down_small:', commandsBlock)
 
         Issue issue = new Issue()
                 .setTitle(title)
@@ -316,9 +297,10 @@ class AutoCherryPicksPR {
         issue
     }
 
-    static List<GitCommand> getCherryPickCommandsFor(GitCommandExecutor gitExec, String commitHash, List<GitCommand> gitCommands) {
+    static List<GitCommand> getCherryPickCommandsFor(GitCommandExecutor gitExec, String targetBranch, String commitHash, List<GitCommand> gitCommands) {
         String branchName = getBranchName(commitHash)
         List<GitCommand> allGitCommands = new ArrayList<>()
+        allGitCommands.add(gitExec.gitCheckoutCommand(targetBranch))
         allGitCommands.add(gitExec.gitFetchCommand())
         allGitCommands.add(gitExec.gitCreateNewBranchCommand(branchName))
         allGitCommands.addAll(gitCommands)
@@ -326,7 +308,7 @@ class AutoCherryPicksPR {
     }
 
     private static void appendDetailsBlock(StringBuilder sb, String summary, String details) {
-        sb.append('<details>\n')
+        sb.append('<details open>\n')
         sb.append('<summary>').append(summary).append('</summary>\n\n')
         sb.append(details)
         sb.append('\n</details>\n')
@@ -348,9 +330,12 @@ class AutoCherryPicksPR {
         return getBranchName(commit.commitHash)
     }
 
+    static boolean shouldCommitBeCherryPicked(Commit commit) {
+        shouldCommitBeCherryPicked(commit.getSha(), commit.getMessage())
+    }
+
     static boolean shouldCommitBeCherryPicked(String commitHash, String commitMessage) {
-        def msg = commitMessage.toLowerCase()
-        def shouldSkip = doNotCherryPickMessages.matcher(msg).find()
+        def shouldSkip = isSkipCherryPickMessage(commitMessage)
         if (shouldSkip) {
             println("Skipping cherry-pick of commit $commitHash '${commitMessage}'")
         }
