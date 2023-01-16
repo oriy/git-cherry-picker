@@ -8,8 +8,6 @@ import org.eclipse.egit.github.core.service.IssueService
 import org.eclipse.egit.github.core.service.LabelService
 import org.eclipse.egit.github.core.service.PullRequestService
 
-import java.util.regex.Pattern
-
 import static com.jacky.git.GitHubUtil.CHERRY_PICK_BODY
 import static com.jacky.git.GitHubUtil.CHERRY_PICK_TITLE
 import static com.jacky.git.GitHubUtil.REPOSITORIES_DIR
@@ -17,6 +15,8 @@ import static com.jacky.git.GitHubUtil.getGitHubIssueUrl
 import static com.jacky.git.IssueServiceHelper.getOpenIssuesByQuery
 import static com.jacky.git.ReportPrinter.printHtml
 import static com.jacky.git.ReportPrinter.printHtmlContent
+import static com.jacky.git.SkipCherryPick.isSkipCherryPickMessage
+import static org.eclipse.egit.github.core.service.IssueService.STATE_CLOSED
 import static org.eclipse.egit.github.core.service.IssueService.STATE_OPEN
 
 /**
@@ -31,8 +31,6 @@ class AutoCherryPicksPR {
 
     private static final String REPORT_NAME = 'Auto Cherry Pick Report'
     private static final String LABEL_NAME = 'cherry-pick'
-
-    private static Pattern doNotCherryPickMessages = Pattern.compile("(no|don't|do not|skip):?[ -]?cherry[ -]?pick")
 
     private static final String EMAIL_HEADER = '<body>'
     private static final String EMAIL_FOOTER = '</ul><br><b>Please go over this report and if your code was not merged, it is YOUR responsibility to fix it!</b><br></body>'
@@ -117,7 +115,8 @@ class AutoCherryPicksPR {
         List<Label> labels = [mainLabel, branchLabel]
 
         println("Merging green cherry-pick PRs for label '$branchLabelName'")
-        PullRequestMergeResult pullRequestMergeResult
+        PullRequestMergeResult pullRequestMergeResult = PullRequestMergeResult.empty()
+
         if (!dryRun) {
             GitGreenMerger greenMerger = new GitGreenMerger(gitExec, gitHubClient, repositoryId)
             pullRequestMergeResult = greenMerger.mergeAllMergable(branchLabelName, false, dryRun)
@@ -170,17 +169,19 @@ class AutoCherryPicksPR {
                 }
 
                 int issueNumber = 1
-                IssueNumberState issueNumberState
 
                 if (failed) {
+                    IssueNumberState issueNumberState
+                    String issueState = STATE_CLOSED
                     if (!dryRun) {
                         issueNumberState = getOrCreateIssue(gitExec, issueService, repositoryId, commitDescription, commitResult, commitDescription.getUser(), labels)
                         issueNumber = issueNumberState.issueNumber
+                        issueState = issueNumberState.issueState
                     }
 
                     gitExec.gitResetLastCommit()
 
-                    if (issueNumberState.issueState.equals(STATE_OPEN)) {
+                    if (issueState == STATE_OPEN) {
                         if (!dryRun) {
                             shouldSendMail = true
                         }
@@ -192,7 +193,7 @@ class AutoCherryPicksPR {
                 } else {
                     if (!dryRun) {
                         Issue issue = createPR(pullRequestService, pullRequestReviewsService, issueService, repositoryId, localTargetBranch, branchName, commit, commitDescription.getUser(), labels)
-                        issueNumberState = IssueNumberState.fromIssue(issue)
+                        IssueNumberState issueNumberState = IssueNumberState.fromIssue(issue)
                         issueNumber = issueNumberState.issueNumber
                     }
                     gitMergeMail.appendBody(printHtml(commitDescription, CommitResult.PULL_REQUEST, getGitHubIssueUrl(repositoryId, issueNumber)))
@@ -208,7 +209,8 @@ class AutoCherryPicksPR {
                     int issueNumber = 1
 
                     if (!dryRun) {
-                        issueNumber = getOrCreateIssue(gitExec, issueService, repositoryId, commitDescription, commitResult, commitDescription.getUser(), labels)
+                        IssueNumberState issueNumberState = getOrCreateIssue(gitExec, issueService, repositoryId, commitDescription, commitResult, commitDescription.getUser(), labels)
+                        issueNumber = issueNumberState.issueNumber
                     }
                     gitMergeMail.addCommitToReport(printHtml(commitDescription, commitResult, getGitHubIssueUrl(repositoryId, issueNumber)), userEmail)
                     gitExec.gitResetLastCommit()
@@ -349,8 +351,7 @@ class AutoCherryPicksPR {
     }
 
     static boolean shouldCommitBeCherryPicked(String commitHash, String commitMessage) {
-        def msg = commitMessage.toLowerCase()
-        def shouldSkip = doNotCherryPickMessages.matcher(msg).find()
+        def shouldSkip = isSkipCherryPickMessage(commitMessage)
         if (shouldSkip) {
             println("Skipping cherry-pick of commit $commitHash '${commitMessage}'")
         }

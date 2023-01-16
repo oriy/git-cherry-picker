@@ -1,4 +1,28 @@
 
+### skip cherry-pick phrases:
+
+`"(no|don'?t|do not|skip):?[ _-]*cherry[ _-]*pick"`
+
+```
+> '.*no cherry pick.*',
+> '.*no cherry-pick.*',
+> '.*no-cheRRy pick.*',
+> '.*no-cherry-pick.*',
+> '.*dont cherry pick.*',
+> '.*dont cherry-pick.*',
+> '.*dont-cherry pick.*',
+> '.*dont-cherry-pick.*',
+> ".*don't cherry pick.*",
+> ".*don't cherry-pick.*",
+> ".*don't-cherry pick.*",
+> ".*don't-cherry-pick.*",
+> '.*do not cherry pick.*',
+> '.*do not cherry-pick.*',
+> '.*do not-cherry pick.*',
+> '.*do not-cherry-pick.*',
+etc.
+```
+
 ### local run
 
 * **AutoCherryPicksPR**

@@ -37,8 +37,8 @@ class GmailSender {
             props.put("mail.smtp.host", host)
             props.put("mail.smtp.user", email)
             props.put("mail.smtp.port", port)
-            props.put("mail.smtp.starttls.enable", "true")
-            props.put("mail.smtp.auth", "true")
+            props.put("mail.smtp.starttls.enable", true)
+            props.put("mail.smtp.auth", true)
 
             def session = Session.getInstance(props, null)
             def msg = new MimeMessage(session)
