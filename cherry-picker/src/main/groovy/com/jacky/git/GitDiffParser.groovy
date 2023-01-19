@@ -11,7 +11,7 @@ import org.codehaus.groovy.runtime.StringGroovyMethods
  */
 class GitDiffParser {
 
-    static final int MAX_ATTEMPTS = 10
+    static final int MAX_ATTEMPTS = 3
 
     private GitCommandExecutor gitCommandExecutor
 
@@ -23,7 +23,8 @@ class GitDiffParser {
         GitCommandResult result = gitCommandExecutor.gitCherryDiff(targetBranch, sourceBranch, MAX_ATTEMPTS)
 
         if (result.isEmptyResponse()) {
-            throw new IllegalStateException(String.format("cherry pick diff failed unexpectedly\n%s", result.error))
+            println "git cherry returned empty list"
+            return []
         }
 
         String[] rows = result.output.split('\n')
