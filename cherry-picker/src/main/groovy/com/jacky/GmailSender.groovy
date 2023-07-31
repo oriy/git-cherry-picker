@@ -24,7 +24,7 @@ class GmailSender {
     String status = ''
 
     public GmailSender() {
-        this.host = 'smtp.googlemail.com'
+        this.host = 'smtp.gmail.com'
         this.port = 465
         this.email = configuration.gmailUser
         this.password = decryptPass(configuration.gmailPass)
