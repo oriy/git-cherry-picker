@@ -74,9 +74,10 @@ class AutoCherryPicksPR {
             println('Sending email')
             println(gitMergeMail.getBody())
 
+
             GmailSender gmailSender = new GmailSender()
             gitMergeMail.appendBody EMAIL_FOOTER
-            gmailSender.simpleMail(gitMergeMail.toAddress, "$REPORT_NAME for: ${context.getRepoName()}", gitMergeMail.getBody())
+            //gmailSender.simpleMail(gitMergeMail.toAddress, "$REPORT_NAME for: ${context.getRepoName()}", gitMergeMail.getBody())
         }
         else {
             println('Ended, no email sent')
